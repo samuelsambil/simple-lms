@@ -1,0 +1,14 @@
+# Django Framework
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+djangorestframework-simplejwt==5.3.0
+
+# Image Processing
+Pillow==10.1.0
+
+# Environment Variables
+python-decouple==3.8
+
+# Development Tools
+django-debug-toolbar==4.2.0
