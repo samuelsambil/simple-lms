@@ -5,24 +5,35 @@ import api from '../api/axios';
 
 function Courses() {
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user, logout } = useContext(AuthContext);
 
   useEffect(() => {
-    fetchCourses();
+    fetchData();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get('/courses/');
-      setCourses(response.data);
+      const [coursesRes, categoriesRes] = await Promise.all([
+        api.get('/courses/'),
+        api.get('/categories/')
+      ]);
+      
+      setCourses(coursesRes.data);
+      setCategories(categoriesRes.data);
       setLoading(false);
     } catch (err) {
       setError('Failed to load courses');
       setLoading(false);
     }
   };
+
+  const filteredCourses = selectedCategory === 'all'
+    ? courses
+    : courses.filter(course => course.category?.slug === selectedCategory);
 
   if (loading) {
     return (
@@ -54,9 +65,9 @@ function Courses() {
             
             {user ? (
               <div className="flex items-center gap-4">
-                <span className="text-gray-700">
+                <Link to="/profile" className="text-gray-700 hover:text-gray-900">
                   {user.first_name || user.email}
-                </span>
+                </Link>
                 <button
                   onClick={logout}
                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -78,9 +89,12 @@ function Courses() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Available Courses
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Browse Courses
         </h1>
+        <p className="text-gray-600 mb-8">
+          Explore our collection of {courses.length} courses
+        </p>
 
         {error && (
           <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -88,15 +102,58 @@ function Courses() {
           </div>
         )}
 
-        {courses.length === 0 ? (
+        {/* Category Filter */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition ${
+                selectedCategory === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              All Courses ({courses.length})
+            </button>
+
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.slug)}
+                className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition flex items-center gap-2 ${
+                  selectedCategory === category.slug
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                }`}
+              >
+                <span>{category.icon}</span>
+                <span>{category.name} ({category.course_count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Courses Grid */}
+        {filteredCourses.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-600 text-lg">
-              No courses available yet. Check back soon!
+              {selectedCategory === 'all' 
+                ? 'No courses available yet. Check back soon!'
+                : `No courses in this category yet.`
+              }
             </p>
+            {selectedCategory !== 'all' && (
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className="mt-4 text-blue-600 hover:underline"
+              >
+                View all courses
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
+            {filteredCourses.map((course) => (
               <Link
                 key={course.id}
                 to={`/courses/${course.id}`}
@@ -117,6 +174,16 @@ function Courses() {
                 )}
 
                 <div className="p-6">
+                  {/* Category Badge */}
+                  {course.category && (
+                    <div className="mb-3">
+                      <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        <span>{course.category.icon}</span>
+                        <span>{course.category.name}</span>
+                      </span>
+                    </div>
+                  )}
+
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {course.title}
                   </h3>

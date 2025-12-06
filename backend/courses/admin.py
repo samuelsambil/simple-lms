@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Course, Lesson
+from .models import Course, Lesson, Category  # Update this import
+
+
+class CategoryAdmin(admin.ModelAdmin):
+    """Admin interface for Category model."""
+    
+    list_display = ['name', 'slug', 'icon', 'created_at']
+    search_fields = ['name', 'description']
+    prepopulated_fields = {'slug': ('name',)}
 
 
 class LessonInline(admin.TabularInline):
@@ -24,7 +32,7 @@ class CourseAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'description', 'instructor')
+            'fields': ('title', 'description', 'instructor', 'category')
         }),
         ('Course Settings', {
             'fields': ('difficulty', 'status', 'thumbnail')
@@ -62,3 +70,4 @@ class LessonAdmin(admin.ModelAdmin):
 
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
+admin.site.register(Category, CategoryAdmin)  # Add this line

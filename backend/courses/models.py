@@ -2,6 +2,26 @@ from django.db import models
 from django.conf import settings
 
 
+class Category(models.Model):
+    """
+    Course categories (e.g., Programming, Design, Business)
+    """
+    
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text='Emoji or icon name')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name_plural = 'Categories'
+        ordering = ['name']
+
+
 class Course(models.Model):
     """
     A course that instructors create and students enroll in.
@@ -25,6 +45,15 @@ class Course(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='courses_created'
+    )
+    
+    # Category - ADD THIS
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='courses'
     )
     
     # Course Details

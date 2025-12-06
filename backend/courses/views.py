@@ -2,12 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Course, Lesson
+from .models import Course, Lesson, Category  # Add Category
 from .serializers import (
     CourseListSerializer, 
     CourseDetailSerializer,
     CourseCreateSerializer,
-    LessonSerializer
+    LessonSerializer,
+    CategorySerializer  # Add this
 )
 
 
@@ -72,3 +73,16 @@ class LessonViewSet(viewsets.ReadOnlyModelViewSet):
         if course_id:
             queryset = queryset.filter(course_id=course_id)
         return queryset
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoints for categories.
+    
+    list: Get all categories with course counts
+    retrieve: Get single category details
+    """
+    
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'  # Allow lookup by slug instead of ID

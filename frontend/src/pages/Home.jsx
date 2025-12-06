@@ -48,7 +48,7 @@ function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
+{/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -57,6 +57,37 @@ function Home() {
           <p className="text-xl text-gray-600 mb-8">
             Your journey to learning starts here
           </p>
+
+          {/* Browse by Category - NEW SECTION */}
+          {!user && (
+            <div className="mb-12">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                Browse by Category
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <Link to="/courses" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+                  <div className="text-4xl mb-2">💻</div>
+                  <div className="font-medium">Programming</div>
+                </Link>
+                <Link to="/courses" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+                  <div className="text-4xl mb-2">🎨</div>
+                  <div className="font-medium">Design</div>
+                </Link>
+                <Link to="/courses" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+                  <div className="text-4xl mb-2">💼</div>
+                  <div className="font-medium">Business</div>
+                </Link>
+                <Link to="/courses" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+                  <div className="text-4xl mb-2">📊</div>
+                  <div className="font-medium">Data Science</div>
+                </Link>
+                <Link to="/courses" className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+                  <div className="text-4xl mb-2">🌱</div>
+                  <div className="font-medium">Personal Dev</div>
+                </Link>
+              </div>
+            </div>
+          )}
 
           {user ? (
             <div className="bg-white rounded-lg shadow p-8 max-w-2xl mx-auto">

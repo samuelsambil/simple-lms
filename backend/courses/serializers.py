@@ -1,8 +1,22 @@
 from rest_framework import serializers
-from .models import Course, Lesson
+from .models import Course, Lesson, Category  # Update import
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Serializer for Category model."""
+    
+    course_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug', 'description', 'icon', 'course_count']
+    
+    def get_course_count(self, obj):
+        """Count published courses in this category."""
+        return obj.courses.filter(status='published').count()
 
 
 class InstructorSerializer(serializers.ModelSerializer):
@@ -33,13 +47,14 @@ class CourseListSerializer(serializers.ModelSerializer):
     """
     
     instructor = InstructorSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)  # Add this line
     total_lessons = serializers.IntegerField(read_only=True)
     total_students = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = Course
         fields = [
-            'id', 'title', 'description', 'instructor',
+            'id', 'title', 'description', 'instructor', 'category',  # Add category here
             'difficulty', 'status', 'thumbnail',
             'total_lessons', 'total_students', 'created_at'
         ]
@@ -52,6 +67,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     """
     
     instructor = InstructorSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)  # Add this line
     lessons = LessonSerializer(many=True, read_only=True)
     total_lessons = serializers.IntegerField(read_only=True)
     total_students = serializers.IntegerField(read_only=True)
@@ -59,7 +75,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'id', 'title', 'description', 'instructor',
+            'id', 'title', 'description', 'instructor', 'category',  # Add category here
             'difficulty', 'status', 'thumbnail',
             'lessons', 'total_lessons', 'total_students',
             'created_at', 'updated_at'
