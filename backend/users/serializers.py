@@ -8,10 +8,25 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model."""
     
+    # Make avatar URL absolute
+    avatar_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'role', 
+            'avatar', 'avatar_url', 'bio', 'location', 'website',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'avatar_url']
+    
+    def get_avatar_url(self, obj):
+        """Return full URL for avatar."""
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

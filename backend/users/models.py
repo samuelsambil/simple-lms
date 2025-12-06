@@ -46,6 +46,15 @@ class User(AbstractUser):
     # User role
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
     
+    # Profile fields - ADD THESE
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    bio = models.TextField(blank=True, max_length=500)
+    location = models.CharField(max_length=100, blank=True)
+    website = models.URLField(blank=True)
+    
+    # Timestamps (already exists below, don't duplicate)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

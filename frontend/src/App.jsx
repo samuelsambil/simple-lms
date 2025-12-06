@@ -9,6 +9,8 @@ import MyCourses from './pages/MyCourses';
 import CoursePlayer from './pages/CoursePlayer';
 import InstructorDashboard from './pages/InstructorDashboard';
 import CreateCourse from './pages/CreateCourse';
+import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 
 function App() {
   return (
@@ -24,6 +26,9 @@ function App() {
           <Route path="/learn/:courseId" element={<CoursePlayer />} />
           <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
           <Route path="/instructor/create-course" element={<CreateCourse />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
         </Routes>
       </Router>
     </AuthProvider>

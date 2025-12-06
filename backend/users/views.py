@@ -38,3 +38,22 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         return self.request.user
+    
+    def get_serializer_context(self):
+        """Pass request to serializer for absolute URLs."""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+class UserProfileView(generics.RetrieveAPIView):
+    """View any user's public profile."""
+    
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+    
+    def get_serializer_context(self):
+        """Pass request to serializer for absolute URLs."""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
