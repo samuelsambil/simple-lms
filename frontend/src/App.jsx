@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import MyCourses from './pages/MyCourses';
+import CoursePlayer from './pages/CoursePlayer';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/my-courses" element={<MyCourses />} />
+          <Route path="/learn/:courseId" element={<CoursePlayer />} />
         </Routes>
       </Router>
     </AuthProvider>
