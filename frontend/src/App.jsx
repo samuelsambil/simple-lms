@@ -7,6 +7,8 @@ import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import MyCourses from './pages/MyCourses';
 import CoursePlayer from './pages/CoursePlayer';
+import InstructorDashboard from './pages/InstructorDashboard';
+import CreateCourse from './pages/CreateCourse';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/learn/:courseId" element={<CoursePlayer />} />
+          <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+          <Route path="/instructor/create-course" element={<CreateCourse />} />
         </Routes>
       </Router>
     </AuthProvider>
