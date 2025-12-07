@@ -101,7 +101,19 @@ function CourseDetail() {
               </Link>
             </div>
             
-            {user ? (
+            {/* Write Review Button - Add this */}
+              {isEnrolled && user && user.role === 'student' && (
+                <div className="mb-4">
+                  <Link
+                    to={`/courses/${id}/review`}
+                    className="block w-full bg-yellow-500 text-white text-center px-6 py-3 rounded-lg hover:bg-yellow-600 font-medium"
+                  >
+                    ⭐ Write a Review
+                  </Link>
+                </div>
+              )}
+
+              {!user ? (
               <div className="flex items-center gap-4">
                 <span className="text-gray-700">
                   {user.first_name || user.email}
@@ -195,7 +207,7 @@ function CourseDetail() {
         </div>
       </div>
 
-      {/* Course Content */}
+            {/* Course Content */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow p-8">
           <h2 className="text-2xl font-bold mb-6">Course Content</h2>
@@ -223,6 +235,7 @@ function CourseDetail() {
                         )}
                       </div>
                     </div>
+
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <span>{lesson.lesson_type === 'video' ? '🎥' : '📝'}</span>
                       <span>{lesson.duration} min</span>
@@ -238,6 +251,76 @@ function CourseDetail() {
             </div>
           ) : (
             <p className="text-gray-600">No lessons available yet.</p>
+          )}
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white rounded-lg shadow p-8 mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Student Reviews</h2>
+            {course.average_rating > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-yellow-500">
+                  {course.average_rating}
+                </span>
+                <div>
+                  <div className="flex text-yellow-400">
+                    {'★'.repeat(Math.round(course.average_rating))}
+                    {'☆'.repeat(5 - Math.round(course.average_rating))}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {course.review_count} review{course.review_count !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {course.reviews && course.reviews.length > 0 ? (
+            <div className="space-y-6">
+              {course.reviews.map((review) => (
+                <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0">
+                  <div className="flex items-start gap-4">
+                    {review.student_avatar ? (
+                      <img
+                        src={review.student_avatar}
+                        alt={review.student_name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-gray-600">
+                        {review.student_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {review.student_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex text-yellow-400 text-lg">
+                          {'★'.repeat(review.rating)}
+                          {'☆'.repeat(5 - review.rating)}
+                        </div>
+                      </div>
+
+                      {review.review_text && (
+                        <p className="text-gray-700">{review.review_text}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600 text-center py-8">
+              No reviews yet. Be the first to review this course!
+            </p>
           )}
         </div>
       </main>

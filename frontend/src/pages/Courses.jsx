@@ -306,6 +306,19 @@ function Courses() {
                     </div>
                   )}
 
+                  {/* Rating - ADD THIS */}
+                  {course.average_rating > 0 && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex text-yellow-400 text-sm">
+                        {'★'.repeat(Math.round(course.average_rating))}
+                        {'☆'.repeat(5 - Math.round(course.average_rating))}
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        {course.average_rating} ({course.review_count})
+                      </span>
+                    </div>
+                  )}
+
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {course.title}
                   </h3>

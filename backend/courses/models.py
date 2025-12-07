@@ -82,6 +82,20 @@ class Course(models.Model):
     def total_students(self):
         """Count students enrolled in this course."""
         return self.enrollments.count()
+    
+    # Add these new methods below total_students:
+    
+    def average_rating(self):
+        """Calculate average rating from reviews."""
+        reviews = self.reviews.all()
+        if reviews.count() == 0:
+            return 0
+        total = sum(review.rating for review in reviews)
+        return round(total / reviews.count(), 1)
+    
+    def review_count(self):
+        """Count total reviews."""
+        return self.reviews.count()
 
 
 class Lesson(models.Model):
@@ -130,3 +144,45 @@ class Lesson(models.Model):
         ordering = ['course', 'order']
         verbose_name = 'Lesson'
         verbose_name_plural = 'Lessons'
+        
+class Review(models.Model):
+    """
+    Student reviews and ratings for courses.
+    """
+    
+    RATING_CHOICES = (
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    )
+    
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reviews_written'
+    )
+    
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    review_text = models.TextField(blank=True)
+    
+    # Helpfulness tracking
+    helpful_count = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.student.email} - {self.course.title} ({self.rating}★)"
+    
+    class Meta:
+        unique_together = ['course', 'student']  # One review per student per course
+        ordering = ['-created_at']
+        verbose_name = 'Review'
+        verbose_name_plural = 'Reviews'

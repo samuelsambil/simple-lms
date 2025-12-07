@@ -11,6 +11,8 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import CreateCourse from './pages/CreateCourse';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
+import WriteReview from './pages/WriteReview';
+
 
 function App() {
   return (
@@ -29,6 +31,10 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/courses/:courseId/review" element={<WriteReview />} />  {/* Add this */}
         </Routes>
       </Router>
     </AuthProvider>

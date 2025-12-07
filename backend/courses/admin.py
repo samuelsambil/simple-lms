@@ -1,5 +1,26 @@
 from django.contrib import admin
-from .models import Course, Lesson, Category  # Update this import
+from .models import Course, Lesson, Category, Review  # Add Review
+
+
+class ReviewAdmin(admin.ModelAdmin):
+    """Admin interface for Review model."""
+    
+    list_display = ['student', 'course', 'rating', 'helpful_count', 'created_at']
+    list_filter = ['rating', 'created_at', 'course']
+    search_fields = ['student__email', 'course__title', 'review_text']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Review Info', {
+            'fields': ('course', 'student', 'rating', 'review_text')
+        }),
+        ('Engagement', {
+            'fields': ('helpful_count',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -70,4 +91,5 @@ class LessonAdmin(admin.ModelAdmin):
 
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
-admin.site.register(Category, CategoryAdmin)  # Add this line
+admin.site.register(Category, CategoryAdmin)
+admin.site.register(Review, ReviewAdmin)  # Add this line
