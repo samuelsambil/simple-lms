@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -24,6 +24,10 @@ class CourseViewSet(viewsets.ModelViewSet):
     """
     
     queryset = Course.objects.filter(status='published')
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]  # Add this
+    search_fields = ['title', 'description', 'instructor__email', 'instructor__first_name', 'instructor__last_name']  # Add this
+    ordering_fields = ['created_at', 'title']  # Add this
+    ordering = ['-created_at']  # Add this - default ordering
     
     def get_serializer_class(self):
         """Use different serializers for different actions."""

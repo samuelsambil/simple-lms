@@ -58,6 +58,28 @@ function Home() {
             Your journey to learning starts here
           </p>
 
+          {/* Quick Search - NEW */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="What do you want to learn today?"
+                className="w-full px-6 py-4 pl-14 text-lg border-2 border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-lg"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && e.target.value) {
+                    window.location.href = `/courses?search=${encodeURIComponent(e.target.value)}`;
+                  }
+                }}
+              />
+              <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-2xl text-gray-400">
+                🔍
+              </div>
+            </div>
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              Try: "Python", "Design", "Business"
+            </p>
+          </div>
+
           {/* Browse by Category - NEW SECTION */}
           {!user && (
             <div className="mb-12">
