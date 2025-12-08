@@ -138,70 +138,100 @@ function CourseDetail() {
       </header>
 
       {/* Course Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-              <p className="text-xl mb-6">{course.description}</p>
-              
-              <div className="flex items-center gap-6 text-sm">
-                <span>
-                  👨‍🏫 {course.instructor.first_name || course.instructor.email}
-                </span>
-                <span>📚 {course.total_lessons} lessons</span>
-                <span>👥 {course.total_students} students</span>
+      <div className="relative">
+        {/* Thumbnail Background */}
+        {course.thumbnail_url ? (
+          <div className="relative h-96">
+            <img
+              src={course.thumbnail_url}
+              alt={course.title}
+              className="w-full h-full object-cover"
+            />
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+          </div>
+        ) : (
+          <div className="h-96 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+        )}
+
+        {/* Course Info Overlay */}
+        <div className="absolute inset-0 text-white">
+          <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 h-full flex items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+              <div>
+                <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
+                <p className="text-xl mb-6">{course.description}</p>
+                
+                <div className="flex items-center gap-6 text-sm">
+                  <span>
+                    👨‍🏫 {course.instructor.first_name || course.instructor.email}
+                  </span>
+                  <span>📚 {course.total_lessons} lessons</span>
+                  <span>👥 {course.total_students} students</span>
+                </div>
+
+                <div className="mt-6">
+                  <span className="bg-white text-blue-600 px-4 py-2 rounded-full font-medium">
+                    {course.difficulty}
+                  </span>
+                </div>
               </div>
 
-              <div className="mt-6">
-                <span className="bg-white text-blue-600 px-4 py-2 rounded-full font-medium">
-                  {course.difficulty}
-                </span>
+              <div className="bg-white text-gray-900 rounded-lg p-6">
+                <h3 className="text-2xl font-bold mb-4">Ready to start learning?</h3>
+                
+                {error && (
+                  <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {/* Write Review Button */}
+                {isEnrolled && user && user.role === 'student' && (
+                  <div className="mb-4">
+                    <Link
+                      to={`/courses/${id}/review`}
+                      className="block w-full bg-yellow-500 text-white text-center px-6 py-3 rounded-lg hover:bg-yellow-600 font-medium"
+                    >
+                      ⭐ Write a Review
+                    </Link>
+                  </div>
+                )}
+
+                {!user ? (
+                  <div>
+                    <p className="text-gray-600 mb-4">
+                      Please log in to enroll in this course
+                    </p>
+                    <Link
+                      to="/login"
+                      className="block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+                    >
+                      Login to Enroll
+                    </Link>
+                  </div>
+                ) : isEnrolled ? (
+                  <div>
+                    <p className="text-green-600 mb-4 font-medium">
+                      ✓ You are enrolled in this course
+                    </p>
+                    <Link
+                      to="/my-courses"
+                      className="block w-full bg-green-600 text-white text-center px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+                    >
+                      Go to My Courses
+                    </Link>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+                  >
+                    {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div className="bg-white text-gray-900 rounded-lg p-6">
-              <h3 className="text-2xl font-bold mb-4">Ready to start learning?</h3>
-              
-              {error && (
-                <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-                  {error}
-                </div>
-              )}
-
-              {!user ? (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Please log in to enroll in this course
-                  </p>
-                  <Link
-                    to="/login"
-                    className="block w-full bg-blue-600 text-white text-center px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
-                  >
-                    Login to Enroll
-                  </Link>
-                </div>
-              ) : isEnrolled ? (
-                <div>
-                  <p className="text-green-600 mb-4 font-medium">
-                    ✓ You are enrolled in this course
-                  </p>
-                  <Link
-                    to="/my-courses"
-                    className="block w-full bg-green-600 text-white text-center px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
-                  >
-                    Go to My Courses
-                  </Link>
-                </div>
-              ) : (
-                <button
-                  onClick={handleEnroll}
-                  disabled={enrolling}
-                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
-                >
-                  {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                </button>
-              )}
             </div>
           </div>
         </div>

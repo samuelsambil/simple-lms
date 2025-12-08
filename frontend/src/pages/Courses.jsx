@@ -281,14 +281,21 @@ function Courses() {
                 to={`/courses/${course.id}`}
                 className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
               >
-                {course.thumbnail ? (
+                {course.thumbnail_url ? (
                   <img
-                    src={course.thumbnail}
+                    src={course.thumbnail_url}
                     alt={course.title}
                     className="w-full h-48 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className={`w-full h-48 flex items-center justify-center ${
+                    course.category?.slug === 'programming' ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
+                    course.category?.slug === 'design' ? 'bg-gradient-to-br from-pink-500 to-purple-600' :
+                    course.category?.slug === 'business' ? 'bg-gradient-to-br from-green-500 to-teal-600' :
+                    course.category?.slug === 'data-science' ? 'bg-gradient-to-br from-orange-500 to-red-600' :
+                    course.category?.slug === 'personal-development' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' :
+                    'bg-gradient-to-br from-blue-500 to-purple-600'
+                  }`}>
                     <span className="text-white text-4xl font-bold">
                       {course.title.charAt(0)}
                     </span>

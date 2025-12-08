@@ -95,20 +95,29 @@ class CourseListSerializer(serializers.ModelSerializer):
     
     instructor = InstructorSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()  # Add this
     total_lessons = serializers.IntegerField(read_only=True)
     total_students = serializers.IntegerField(read_only=True)
-    average_rating = serializers.FloatField(read_only=True)  # Add this
-    review_count = serializers.IntegerField(read_only=True)  # Add this
+    average_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = Course
         fields = [
             'id', 'title', 'description', 'instructor', 'category',
-            'difficulty', 'status', 'thumbnail',
+            'difficulty', 'status', 'thumbnail', 'thumbnail_url',  # Add thumbnail_url
             'total_lessons', 'total_students', 
-            'average_rating', 'review_count',  # Add these
+            'average_rating', 'review_count',
             'created_at'
         ]
+    
+    def get_thumbnail_url(self, obj):
+        """Return full URL for thumbnail."""
+        if obj.thumbnail:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     """
@@ -119,7 +128,8 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     instructor = InstructorSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
     lessons = LessonSerializer(many=True, read_only=True)
-    reviews = ReviewSerializer(many=True, read_only=True)  # Now this works!
+    reviews = ReviewSerializer(many=True, read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()  # Add this
     total_lessons = serializers.IntegerField(read_only=True)
     total_students = serializers.IntegerField(read_only=True)
     average_rating = serializers.FloatField(read_only=True)
@@ -129,11 +139,19 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'id', 'title', 'description', 'instructor', 'category',
-            'difficulty', 'status', 'thumbnail',
+            'difficulty', 'status', 'thumbnail', 'thumbnail_url',  # Add thumbnail_url
             'lessons', 'reviews', 'total_lessons', 'total_students',
             'average_rating', 'review_count',
             'created_at', 'updated_at'
         ]
+    
+    def get_thumbnail_url(self, obj):
+        """Return full URL for thumbnail."""
+        if obj.thumbnail:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 class CourseCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating courses (instructors only)."""

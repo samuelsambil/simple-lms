@@ -13,6 +13,8 @@ function CreateCourse() {
     difficulty: 'beginner',
     status: 'draft',
   });
+  const [thumbnailFile, setThumbnailFile] = useState(null);  // Add this
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);  // Add this
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,13 +30,38 @@ function CreateCourse() {
     });
   };
 
+  // Add this function
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const response = await api.post('/courses/', formData);
+      // Create FormData for file upload
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('description', formData.description);
+      data.append('difficulty', formData.difficulty);
+      data.append('status', formData.status);
+      
+      if (thumbnailFile) {
+        data.append('thumbnail', thumbnailFile);
+      }
+
+      const response = await api.post('/courses/', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
       alert('Course created successfully! 🎉');
       navigate('/instructor/dashboard');
     } catch (err) {
@@ -140,6 +167,33 @@ function CreateCourse() {
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
               </select>
+            </div>
+
+            {/* Thumbnail Upload - ADD THIS */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Course Thumbnail (Optional)
+              </label>
+              
+              {thumbnailPreview && (
+                <div className="mb-4">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+                className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                JPG, PNG, or GIF (recommended: 1200x600px)
+              </p>
             </div>
 
             {/* Status */}
