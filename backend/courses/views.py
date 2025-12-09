@@ -1,3 +1,6 @@
+from django.db.models import Count, Avg, Q
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -58,6 +61,78 @@ class CourseViewSet(viewsets.ModelViewSet):
         lessons = course.lessons.all()
         serializer = LessonSerializer(lessons, many=True)
         return Response(serializer.data)
+    
+    # Add this new action below lessons
+    @action(detail=True, methods=['get'])
+    def analytics(self, request, pk=None):
+        """Get detailed analytics for a course (instructors only)."""
+        course = self.get_object()
+        
+        # Check if user is the instructor
+        if course.instructor != request.user:
+            return Response(
+                {'error': 'Only the course instructor can view analytics'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        from enrollments.models import Enrollment
+        
+        # Get all enrollments for this course
+        enrollments = Enrollment.objects.filter(course=course)
+        
+        # Basic stats
+        total_students = enrollments.count()
+        completed_students = enrollments.filter(completed=True).count()
+        completion_rate = (completed_students / total_students * 100) if total_students > 0 else 0
+        
+        # Average progress
+        avg_progress = enrollments.aggregate(Avg('progress_percentage'))['progress_percentage__avg'] or 0
+        
+        # Enrollments over time (last 30 days)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_enrollments = enrollments.filter(enrolled_date__gte=thirty_days_ago)
+        
+        # Group by date
+        enrollment_timeline = []
+        for i in range(30):
+            date = timezone.now() - timedelta(days=29-i)
+            count = recent_enrollments.filter(
+                enrolled_date__date=date.date()
+            ).count()
+            enrollment_timeline.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'count': count
+            })
+        
+        # Reviews stats
+        reviews = course.reviews.all()
+        rating_distribution = {
+            '5': reviews.filter(rating=5).count(),
+            '4': reviews.filter(rating=4).count(),
+            '3': reviews.filter(rating=3).count(),
+            '2': reviews.filter(rating=2).count(),
+            '1': reviews.filter(rating=1).count(),
+        }
+        
+        # Progress distribution
+        progress_ranges = {
+            '0-25%': enrollments.filter(progress_percentage__lt=25).count(),
+            '25-50%': enrollments.filter(progress_percentage__gte=25, progress_percentage__lt=50).count(),
+            '50-75%': enrollments.filter(progress_percentage__gte=50, progress_percentage__lt=75).count(),
+            '75-100%': enrollments.filter(progress_percentage__gte=75).count(),
+        }
+        
+        return Response({
+            'total_students': total_students,
+            'completed_students': completed_students,
+            'completion_rate': round(completion_rate, 1),
+            'average_progress': round(avg_progress, 1),
+            'average_rating': course.average_rating(),
+            'total_reviews': reviews.count(),
+            'enrollment_timeline': enrollment_timeline,
+            'rating_distribution': rating_distribution,
+            'progress_distribution': progress_ranges,
+        })
 
 
 class LessonViewSet(viewsets.ReadOnlyModelViewSet):

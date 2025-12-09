@@ -12,6 +12,7 @@ import CreateCourse from './pages/CreateCourse';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import WriteReview from './pages/WriteReview';
+import CourseAnalytics from './pages/CourseAnalytics';
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="/learn/:courseId" element={<CoursePlayer />} />
           <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
           <Route path="/instructor/create-course" element={<CreateCourse />} />
+          <Route path="/instructor/courses/:courseId/analytics" element={<CourseAnalytics />} />  {/* Add this */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />

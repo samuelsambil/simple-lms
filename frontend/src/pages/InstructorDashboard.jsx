@@ -188,6 +188,12 @@ function InstructorDashboard() {
                       >
                         View
                       </Link>
+                      <Link
+                        to={`/instructor/courses/${course.id}/analytics`}
+                        className="text-green-600 hover:text-green-700 px-4 py-2 border border-green-600 rounded hover:bg-green-50"
+                      >
+                        Analytics
+                      </Link>
                       
                       <a
                         href={`http://127.0.0.1:8000/admin/courses/course/${course.id}/change/`}
