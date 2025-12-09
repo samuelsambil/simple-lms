@@ -30,7 +30,6 @@ function CoursePlayer() {
 
   const fetchEnrollment = async () => {
     try {
-      // Get all enrollments
       const response = await api.get('/enrollments/');
       const foundEnrollment = response.data.find(
         (e) => e.course.id === parseInt(courseId)
@@ -44,11 +43,10 @@ function CoursePlayer() {
 
       setEnrollment(foundEnrollment);
 
-      // Set first incomplete lesson or first lesson
       const firstIncomplete = foundEnrollment.lesson_progress.find(
         (lp) => !lp.completed
       );
-      
+
       if (firstIncomplete) {
         setCurrentLesson(firstIncomplete.lesson);
       } else if (foundEnrollment.lesson_progress.length > 0) {
@@ -73,7 +71,6 @@ function CoursePlayer() {
         lesson_id: currentLesson.id,
       });
 
-      // Refresh enrollment data
       await fetchEnrollment();
       alert('Lesson marked as complete! 🎉');
     } catch (err) {
@@ -92,12 +89,10 @@ function CoursePlayer() {
   };
 
   const getVideoEmbedUrl = (url) => {
-    // Convert YouTube URL to embed URL
     if (!url) return '';
-    
-    // Extract video ID from various YouTube URL formats
+
     let videoId = '';
-    
+
     if (url.includes('youtube.com/watch?v=')) {
       videoId = url.split('watch?v=')[1].split('&')[0];
     } else if (url.includes('youtu.be/')) {
@@ -105,7 +100,7 @@ function CoursePlayer() {
     } else if (url.includes('youtube.com/embed/')) {
       return url;
     }
-    
+
     return `https://www.youtube.com/embed/${videoId}`;
   };
 
@@ -122,10 +117,7 @@ function CoursePlayer() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-xl text-red-600 mb-4">{error}</div>
-          <Link
-            to="/courses"
-            className="text-blue-600 hover:underline"
-          >
+          <Link to="/courses" className="text-blue-600 hover:underline">
             Browse Courses
           </Link>
         </div>
@@ -147,7 +139,7 @@ function CoursePlayer() {
                 {enrollment?.course.title}
               </span>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Link
                 to="/my-courses"
@@ -167,7 +159,7 @@ function CoursePlayer() {
       </header>
 
       <div className="flex h-[calc(100vh-80px)]">
-        {/* Sidebar - Lesson List */}
+        {/* Sidebar */}
         <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4 border-b border-gray-200">
             <h2 className="font-bold text-lg mb-2">Course Content</h2>
@@ -175,7 +167,9 @@ function CoursePlayer() {
               <div className="flex-1 bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-green-600 h-2 rounded-full transition-all"
-                  style={{ width: `${enrollment?.progress_percentage || 0}%` }}
+                  style={{
+                    width: `${enrollment?.progress_percentage || 0}%`,
+                  }}
                 ></div>
               </div>
               <span className="text-gray-600">
@@ -208,15 +202,26 @@ function CoursePlayer() {
                         <span className="text-gray-400 text-xl">○</span>
                       )}
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-gray-500 mb-1">
                         Lesson {index + 1}
                       </div>
+
+                      {/* TITLE + QUIZ BADGE */}
                       <div className="font-medium text-gray-900 mb-1">
                         {lesson.title}
+                        {lesson.quiz && (
+                          <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                            📝 Quiz
+                          </span>
+                        )}
                       </div>
+
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{lesson.lesson_type === 'video' ? '🎥' : '📝'}</span>
+                        <span>
+                          {lesson.lesson_type === 'video' ? '🎥' : '📝'}
+                        </span>
                         <span>{lesson.duration} min</span>
                       </div>
                     </div>
@@ -227,7 +232,7 @@ function CoursePlayer() {
           </div>
         </div>
 
-        {/* Main Content - Video Player */}
+        {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
           {currentLesson ? (
             <div className="max-w-5xl mx-auto p-8">
@@ -241,67 +246,95 @@ function CoursePlayer() {
                 </div>
               )}
 
-              {/* Video Player */}
-              {currentLesson.lesson_type === 'video' && currentLesson.video_url && (
-                <div className="mb-6">
-                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
-                      src={getVideoEmbedUrl(currentLesson.video_url)}
-                      title={currentLesson.title}
-                      className="w-full h-full"
-                      allowFullScreen
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    ></iframe>
+              {/* Video */}
+              {currentLesson.lesson_type === 'video' &&
+                currentLesson.video_url && (
+                  <div className="mb-6">
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                      <iframe
+                        src={getVideoEmbedUrl(currentLesson.video_url)}
+                        title={currentLesson.title}
+                        className="w-full h-full"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      ></iframe>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Text Content */}
-              {currentLesson.lesson_type === 'text' && currentLesson.text_content && (
-                <div className="prose max-w-none mb-6 bg-white p-8 rounded-lg shadow">
-                  <div className="whitespace-pre-wrap">
-                    {currentLesson.text_content}
+              {currentLesson.lesson_type === 'text' &&
+                currentLesson.text_content && (
+                  <div className="prose max-w-none mb-6 bg-white p-8 rounded-lg shadow">
+                    <div className="whitespace-pre-wrap">
+                      {currentLesson.text_content}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Description */}
               {currentLesson.description && (
                 <div className="bg-white p-6 rounded-lg shadow mb-6">
                   <h3 className="font-bold text-lg mb-2">About this lesson</h3>
-                  <p className="text-gray-600">{currentLesson.description}</p>
+                  <p className="text-gray-600">
+                    {currentLesson.description}
+                  </p>
                 </div>
               )}
 
-              {/* Complete Lesson Button */}
-              <div className="bg-white p-6 rounded-lg shadow">
-                {isLessonCompleted(currentLesson.id) ? (
-                  <div className="text-center">
-                    <div className="text-green-600 font-medium text-lg mb-2">
-                      ✓ Lesson Completed
-                    </div>
-                    <p className="text-gray-600">
-                      Great job! Move on to the next lesson.
-                    </p>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleCompleteLesson}
-                    disabled={completing}
-                    className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
-                  >
-                    {completing ? 'Marking as complete...' : 'Mark as Complete'}
-                  </button>
-                )}
-              </div>
+              {/* Quiz Button - ADD THIS */}
+{currentLesson.quiz && (
+  <div className="bg-white p-6 rounded-lg shadow mb-6">
+    <div className="flex items-center justify-between">
+      <div>
+        <h3 className="font-bold text-lg text-gray-900 mb-2">
+          📝 Quiz Available
+        </h3>
+        <p className="text-gray-600">
+          Test your knowledge of this lesson
+        </p>
+      </div>
+      <Link
+        to={`/quiz/${currentLesson.quiz.id}/take`}
+        className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium"
+      >
+        Take Quiz
+      </Link>
+    </div>
+  </div>
+)}
 
-              {/* Navigation Buttons */}
+{/* Complete Lesson Button */}
+<div className="bg-white p-6 rounded-lg shadow">
+  {isLessonCompleted(currentLesson.id) ? (
+    <div className="text-center">
+      <div className="text-green-600 font-medium text-lg mb-2">
+        ✓ Lesson Completed
+      </div>
+      <p className="text-gray-600">
+        Great job! Move on to the next lesson.
+      </p>
+    </div>
+  ) : (
+    <button
+      onClick={handleCompleteLesson}
+      disabled={completing}
+      className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
+    >
+      {completing ? 'Marking as complete...' : 'Mark as Complete'}
+    </button>
+  )}
+</div>
+
+
+              {/* Navigation */}
               <div className="flex justify-between mt-6">
                 <button
                   onClick={() => {
-                    const currentIndex = enrollment.lesson_progress.findIndex(
-                      (lp) => lp.lesson.id === currentLesson.id
-                    );
+                    const currentIndex =
+                      enrollment.lesson_progress.findIndex(
+                        (lp) => lp.lesson.id === currentLesson.id
+                      );
                     if (currentIndex > 0) {
                       setCurrentLesson(
                         enrollment.lesson_progress[currentIndex - 1].lesson
@@ -320,19 +353,25 @@ function CoursePlayer() {
 
                 <button
                   onClick={() => {
-                    const currentIndex = enrollment.lesson_progress.findIndex(
-                      (lp) => lp.lesson.id === currentLesson.id
-                    );
-                    if (currentIndex < enrollment.lesson_progress.length - 1) {
+                    const currentIndex =
+                      enrollment.lesson_progress.findIndex(
+                        (lp) => lp.lesson.id === currentLesson.id
+                      );
+                    if (
+                      currentIndex <
+                      enrollment.lesson_progress.length - 1
+                    ) {
                       setCurrentLesson(
-                        enrollment.lesson_progress[currentIndex + 1].lesson
+                        enrollment.lesson_progress[currentIndex + 1]
+                          .lesson
                       );
                     }
                   }}
                   disabled={
                     enrollment.lesson_progress.findIndex(
                       (lp) => lp.lesson.id === currentLesson.id
-                    ) === enrollment.lesson_progress.length - 1
+                    ) ===
+                    enrollment.lesson_progress.length - 1
                   }
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
                 >

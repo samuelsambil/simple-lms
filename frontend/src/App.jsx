@@ -13,6 +13,8 @@ import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import WriteReview from './pages/WriteReview';
 import CourseAnalytics from './pages/CourseAnalytics';
+import TakeQuiz from './pages/TakeQuiz';
+import QuizResults from './pages/QuizResults';
 
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
           <Route path="/instructor/create-course" element={<CreateCourse />} />
           <Route path="/instructor/courses/:courseId/analytics" element={<CourseAnalytics />} />  {/* Add this */}
+          <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />  {/* Add this */}
+          <Route path="/quiz/:quizId/results/:attemptId" element={<QuizResults />} />  {/* Add this */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />

@@ -44,11 +44,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_filters',
     
     # Our apps
     'users',
     'courses',
     'enrollments',
+    'assessments',  # Add this line
+    #'ai',
 ]
 
 MIDDLEWARE = [

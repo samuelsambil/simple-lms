@@ -8,9 +8,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API endpoints
-    path('api/auth/', include('users.urls')),  # Add this line
+    path('api/auth/', include('users.urls')),
     path('api/', include('courses.urls')),
     path('api/', include('enrollments.urls')),
+    path('api/', include('assessments.urls')),  # Add this line
 ]
 
 # Serve media files in development

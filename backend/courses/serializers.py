@@ -30,14 +30,22 @@ class InstructorSerializer(serializers.ModelSerializer):
 class LessonSerializer(serializers.ModelSerializer):
     """Serializer for Lesson model."""
     
+    quiz = serializers.SerializerMethodField()  # Add this
+    
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'description', 'lesson_type', 
             'video_url', 'text_content', 'order', 'duration', 
-            'is_free_preview', 'created_at'
+            'is_free_preview', 'quiz', 'created_at'  # Add quiz
         ]
         read_only_fields = ['id', 'created_at']
+    
+    def get_quiz(self, obj):
+        """Check if lesson has a quiz."""
+        if hasattr(obj, 'quiz'):
+            return {'id': obj.quiz.id, 'title': obj.quiz.title}
+        return None
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Serializer for Review model."""
