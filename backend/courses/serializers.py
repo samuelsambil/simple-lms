@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson, Category, Review  # Add Review
+from .models import Course, Lesson, Category, Review, Discussion, Comment  # Add Discussion, Comment
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -174,4 +174,93 @@ class CourseCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Automatically set instructor to current user
         validated_data['instructor'] = self.context['request'].user
+        return super().create(validated_data)
+    
+    
+class CommentUserSerializer(serializers.ModelSerializer):
+    """Serializer for user info in comments."""
+    
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for Comment model."""
+    
+    user = CommentUserSerializer(read_only=True)
+    reply_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = [
+            'id', 'discussion', 'user', 'parent_comment', 'content',
+            'upvotes', 'is_instructor_reply', 'reply_count',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'upvotes', 'is_instructor_reply', 'created_at', 'updated_at']
+    
+    def get_reply_count(self, obj):
+        return obj.replies.count()
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating comments."""
+    
+    class Meta:
+        model = Comment
+        fields = ['discussion', 'parent_comment', 'content']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class DiscussionSerializer(serializers.ModelSerializer):
+    """Serializer for Discussion model (list view)."""
+    
+    user = CommentUserSerializer(read_only=True)
+    comment_count = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = Discussion
+        fields = [
+            'id', 'course', 'user', 'title', 'content',
+            'upvotes', 'is_pinned', 'is_resolved',
+            'comment_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'upvotes', 'created_at', 'updated_at']
+
+
+class DiscussionDetailSerializer(serializers.ModelSerializer):
+    """Serializer for Discussion with comments."""
+    
+    user = CommentUserSerializer(read_only=True)
+    comments = serializers.SerializerMethodField()
+    comment_count = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = Discussion
+        fields = [
+            'id', 'course', 'user', 'title', 'content',
+            'upvotes', 'is_pinned', 'is_resolved',
+            'comments', 'comment_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'upvotes', 'created_at', 'updated_at']
+    
+    def get_comments(self, obj):
+        # Get only top-level comments (no parent)
+        top_level_comments = obj.comments.filter(parent_comment__isnull=True)
+        return CommentSerializer(top_level_comments, many=True).data
+
+
+class DiscussionCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating discussions."""
+    
+    class Meta:
+        model = Discussion
+        fields = ['course', 'title', 'content']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
         return super().create(validated_data)

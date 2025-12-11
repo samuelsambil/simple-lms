@@ -186,3 +186,84 @@ class Review(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Review'
         verbose_name_plural = 'Reviews'
+
+
+class Discussion(models.Model):
+    """
+    A discussion thread in a course.
+    """
+    
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='discussions'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='discussions_created'
+    )
+    
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    upvotes = models.IntegerField(default=0)
+    is_pinned = models.BooleanField(default=False, help_text='Pinned by instructor')
+    is_resolved = models.BooleanField(default=False, help_text='Question answered')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.title}"
+    
+    class Meta:
+        ordering = ['-is_pinned', '-created_at']
+        verbose_name = 'Discussion'
+        verbose_name_plural = 'Discussions'
+    
+    def comment_count(self):
+        """Count total comments."""
+        return self.comments.count()
+
+
+class Comment(models.Model):
+    """
+    A comment on a discussion thread.
+    """
+    
+    discussion = models.ForeignKey(
+        Discussion,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comments_created'
+    )
+    parent_comment = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+    
+    content = models.TextField()
+    upvotes = models.IntegerField(default=0)
+    is_instructor_reply = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Comment by {self.user.email} on {self.discussion.title}"
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def save(self, *args, **kwargs):
+        # Auto-detect if this is from the course instructor
+        if self.user == self.discussion.course.instructor:
+            self.is_instructor_reply = True
+        super().save(*args, **kwargs)

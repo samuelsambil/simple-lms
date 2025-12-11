@@ -15,6 +15,8 @@ import WriteReview from './pages/WriteReview';
 import CourseAnalytics from './pages/CourseAnalytics';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizResults from './pages/QuizResults';
+import CourseDiscussions from './pages/CourseDiscussions';
+import DiscussionDetail from './pages/DiscussionDetail';
 
 
 function App() {
@@ -36,6 +38,8 @@ function App() {
           <Route path="/quiz/:quizId/results/:attemptId" element={<QuizResults />} />  {/* Add this */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/courses/:courseId/discussions" element={<CourseDiscussions />} />  {/* Add this */}
+          <Route path="/courses/:courseId/discussions/:discussionId" element={<DiscussionDetail />} />  {/* Add this */}
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:userId" element={<Profile />} />

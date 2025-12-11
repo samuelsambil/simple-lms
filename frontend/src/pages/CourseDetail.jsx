@@ -101,7 +101,7 @@ function CourseDetail() {
               </Link>
             </div>
             
-            {/* Write Review Button - Add this */}
+            {/* Write Review Button */}
               {isEnrolled && user && user.role === 'student' && (
                 <div className="mb-4">
                   <Link
@@ -112,6 +112,16 @@ function CourseDetail() {
                   </Link>
                 </div>
               )}
+
+              {/* ADD DISCUSSIONS BUTTON HERE */}
+              <div className="mb-4">
+                <Link
+                  to={`/courses/${id}/discussions`}
+                  className="block w-full bg-purple-600 text-white text-center px-6 py-3 rounded-lg hover:bg-purple-700 font-medium"
+                >
+                  💬 Course Discussions
+                </Link>
+              </div>
 
               {!user ? (
               <div className="flex items-center gap-4">
@@ -139,6 +149,20 @@ function CourseDetail() {
 
       {/* Course Header */}
       <div className="relative">
+
+      {/* Action Buttons */}
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex gap-4">
+          {isEnrolled && (
+            <>
+              <Link
+                to={`/courses/${id}/discussions`}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium"
+              >
+                💬 Discussions
+              </Link>
+            </>
+          )}
+        </div>
         {/* Thumbnail Background */}
         {course.thumbnail_url ? (
           <div className="relative h-96">

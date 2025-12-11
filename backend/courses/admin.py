@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, Category, Review  # Add Review
+from .models import Course, Lesson, Category, Review, Discussion, Comment  # Add Discussion, Comment
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -87,9 +87,53 @@ class LessonAdmin(admin.ModelAdmin):
             'fields': ('order', 'duration', 'is_free_preview')
         }),
     )
+class CommentInline(admin.TabularInline):
+    """Show comments inline when viewing a discussion."""
+    model = Comment
+    extra = 0
+    fields = ['user', 'content', 'upvotes', 'is_instructor_reply', 'created_at']
+    readonly_fields = ['created_at', 'is_instructor_reply']
 
 
+class DiscussionAdmin(admin.ModelAdmin):
+    """Admin interface for Discussion model."""
+    
+    list_display = ['title', 'course', 'user', 'upvotes', 'is_pinned', 'is_resolved', 'comment_count', 'created_at']
+    list_filter = ['is_pinned', 'is_resolved', 'created_at', 'course']
+    search_fields = ['title', 'content', 'user__email', 'course__title']
+    
+    inlines = [CommentInline]
+    
+    fieldsets = (
+        ('Discussion Info', {
+            'fields': ('course', 'user', 'title', 'content')
+        }),
+        ('Status', {
+            'fields': ('upvotes', 'is_pinned', 'is_resolved')
+        }),
+    )
+    
+    def comment_count(self, obj):
+        return obj.comment_count()
+    comment_count.short_description = 'Comments'
+
+
+class CommentAdmin(admin.ModelAdmin):
+    """Admin interface for Comment model."""
+    
+    list_display = ['discussion', 'user', 'content_preview', 'upvotes', 'is_instructor_reply', 'created_at']
+    list_filter = ['is_instructor_reply', 'created_at']
+    search_fields = ['content', 'user__email', 'discussion__title']
+    
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Content'
+
+
+# Register at the bottom
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(Review, ReviewAdmin)  # Add this line
+admin.site.register(Review, ReviewAdmin)
+admin.site.register(Discussion, DiscussionAdmin)  # Add this
+admin.site.register(Comment, CommentAdmin)  # Add this

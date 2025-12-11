@@ -5,7 +5,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Course, Lesson, Category, Review
+from .models import Course, Lesson, Category, Review, Discussion, Comment  # Add Discussion, Comment
 from .serializers import (
     CourseListSerializer, 
     CourseDetailSerializer,
@@ -13,7 +13,12 @@ from .serializers import (
     LessonSerializer,
     CategorySerializer,
     ReviewSerializer,
-    ReviewCreateSerializer
+    ReviewCreateSerializer,
+    DiscussionSerializer,  # Add these
+    DiscussionDetailSerializer,
+    DiscussionCreateSerializer,
+    CommentSerializer,
+    CommentCreateSerializer
 )
 
 
@@ -258,4 +263,133 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 {'error': 'You can only delete your own reviews'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        return super().destroy(request, *args, **kwargs)   
+        return super().destroy(request, *args, **kwargs)
+    
+
+class DiscussionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoints for discussions.
+    
+    list: Get all discussions (can filter by course)
+    retrieve: Get discussion with comments
+    create: Create new discussion
+    update: Update own discussion
+    delete: Delete own discussion
+    """
+    
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Discussion.objects.all()
+        course_id = self.request.query_params.get('course_id')
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
+    
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return DiscussionDetailSerializer
+        elif self.action == 'create':
+            return DiscussionCreateSerializer
+        return DiscussionSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save()
+    
+    def update(self, request, *args, **kwargs):
+        """Only allow users to update their own discussions."""
+        discussion = self.get_object()
+        if discussion.user != request.user and request.user.role != 'admin':
+            return Response(
+                {'error': 'You can only edit your own discussions'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Only allow users to delete their own discussions."""
+        discussion = self.get_object()
+        if discussion.user != request.user and request.user.role != 'admin':
+            return Response(
+                {'error': 'You can only delete your own discussions'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'])
+    def upvote(self, request, pk=None):
+        """Upvote a discussion."""
+        discussion = self.get_object()
+        discussion.upvotes += 1
+        discussion.save()
+        return Response({'upvotes': discussion.upvotes})
+    
+    @action(detail=True, methods=['post'])
+    def resolve(self, request, pk=None):
+        """Mark discussion as resolved (instructor or discussion creator only)."""
+        discussion = self.get_object()
+        
+        # Check if user is instructor or discussion creator
+        if (discussion.course.instructor != request.user and 
+            discussion.user != request.user):
+            return Response(
+                {'error': 'Only the instructor or discussion creator can mark as resolved'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        discussion.is_resolved = True
+        discussion.save()
+        return Response({'message': 'Discussion marked as resolved'})
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    API endpoints for comments.
+    
+    list: Get all comments (can filter by discussion)
+    create: Create new comment
+    update: Update own comment
+    delete: Delete own comment
+    """
+    
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Comment.objects.all()
+        discussion_id = self.request.query_params.get('discussion_id')
+        if discussion_id:
+            queryset = queryset.filter(discussion_id=discussion_id)
+        return queryset
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CommentCreateSerializer
+        return CommentSerializer
+    
+    def update(self, request, *args, **kwargs):
+        """Only allow users to update their own comments."""
+        comment = self.get_object()
+        if comment.user != request.user and request.user.role != 'admin':
+            return Response(
+                {'error': 'You can only edit your own comments'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Only allow users to delete their own comments."""
+        comment = self.get_object()
+        if comment.user != request.user and request.user.role != 'admin':
+            return Response(
+                {'error': 'You can only delete your own comments'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'])
+    def upvote(self, request, pk=None):
+        """Upvote a comment."""
+        comment = self.get_object()
+        comment.upvotes += 1
+        comment.save()
+        return Response({'upvotes': comment.upvotes})   
