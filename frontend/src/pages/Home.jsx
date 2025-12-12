@@ -302,7 +302,7 @@ function Home() {
         {/* Footer CTA */}
         <section className="mt-32 text-center">
           <p className="text-gray-400 text-sm">
-            Join thousands of learners worldwide 🌍
+             thousands of learners worldwide 🌍
           </p>
         </section>
       </main>
