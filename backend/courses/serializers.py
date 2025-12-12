@@ -30,21 +30,31 @@ class InstructorSerializer(serializers.ModelSerializer):
 class LessonSerializer(serializers.ModelSerializer):
     """Serializer for Lesson model."""
     
-    quiz = serializers.SerializerMethodField()  # Add this
+    quiz = serializers.SerializerMethodField()
+    video_file_url = serializers.SerializerMethodField()  # Add this
     
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'description', 'lesson_type', 
-            'video_url', 'text_content', 'order', 'duration', 
-            'is_free_preview', 'quiz', 'created_at'  # Add quiz
+            'video_url', 'video_file', 'video_file_url',  # Add video_file and video_file_url
+            'text_content', 'order', 'duration', 
+            'is_free_preview', 'quiz', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'video_file_url']
     
     def get_quiz(self, obj):
         """Check if lesson has a quiz."""
         if hasattr(obj, 'quiz'):
             return {'id': obj.quiz.id, 'title': obj.quiz.title}
+        return None
+    
+    def get_video_file_url(self, obj):  # Add this method
+        """Return full URL for uploaded video file."""
+        if obj.video_file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.video_file.url)
         return None
 
 class ReviewSerializer(serializers.ModelSerializer):

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from .validators import validate_video_file, validate_video_content_type
 
 
 class Category(models.Model):
@@ -100,15 +101,17 @@ class Course(models.Model):
 
 class Lesson(models.Model):
     """
-    A lesson belongs to a course. Can be video or text.
+    A lesson within a course.
+    Can be a video lesson or text-based lesson.
     """
     
+    # ADD THIS - Lesson Type Choices
     LESSON_TYPE_CHOICES = (
         ('video', 'Video'),
         ('text', 'Text'),
     )
     
-    # Which course this belongs to
+    # Relationships
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
@@ -119,19 +122,39 @@ class Lesson(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     
+    # ADD THIS FIELD
+    lesson_type = models.CharField(
+        max_length=20,
+        choices=LESSON_TYPE_CHOICES,
+        default='video',
+        help_text='Type of lesson content'
+    )
+    
+    order = models.IntegerField(default=0, help_text='Order within the course')
+    duration = models.IntegerField(default=0, help_text='Duration in minutes')
+    
     # Content
-    lesson_type = models.CharField(max_length=10, choices=LESSON_TYPE_CHOICES, default='video')
-    video_url = models.URLField(blank=True, help_text='YouTube video URL')
-    text_content = models.TextField(blank=True, help_text='Text lesson content (supports Markdown)')
+    video_url = models.URLField(
+        blank=True,
+        help_text='YouTube video URL (if not uploading file)'
+    )
+    video_file = models.FileField(
+        upload_to='lesson_videos/',
+        blank=True,
+        null=True,
+        validators=[validate_video_file, validate_video_content_type],
+        help_text='Upload video file directly (MP4, MOV, AVI, MKV, WEBM) - Max 500MB'
+    )
+    text_content = models.TextField(
+        blank=True,
+        help_text='Lesson content in Markdown'
+    )
     
-    # Order
-    order = models.PositiveIntegerField(default=0, help_text='Lesson order in the course')
-    
-    # Duration (in minutes)
-    duration = models.PositiveIntegerField(default=0, help_text='Lesson duration in minutes')
-    
-    # Free preview
-    is_free_preview = models.BooleanField(default=False, help_text='Can anyone watch without enrolling?')
+    # Settings
+    is_free_preview = models.BooleanField(
+        default=False,
+        help_text='Allow non-enrolled students to preview this lesson'
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

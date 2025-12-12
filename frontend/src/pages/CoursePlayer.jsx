@@ -246,11 +246,22 @@ function CoursePlayer() {
                 </div>
               )}
 
-              {/* Video */}
-              {currentLesson.lesson_type === 'video' &&
-                currentLesson.video_url && (
-                  <div className="mb-6">
-                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              {/* Video Player */}
+              {currentLesson.lesson_type === 'video' && (
+                <div className="mb-6">
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                    {currentLesson.video_file_url ? (
+                      // Uploaded video file
+                      <video
+                        controls
+                        className="w-full h-full"
+                        poster=""
+                      >
+                        <source src={currentLesson.video_file_url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : currentLesson.video_url ? (
+                      // YouTube video
                       <iframe
                         src={getVideoEmbedUrl(currentLesson.video_url)}
                         title={currentLesson.title}
@@ -258,9 +269,14 @@ function CoursePlayer() {
                         allowFullScreen
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       ></iframe>
-                    </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white">
+                        <p>No video available</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
 
               {/* Text Content */}
               {currentLesson.lesson_type === 'text' &&

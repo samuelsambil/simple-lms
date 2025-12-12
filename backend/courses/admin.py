@@ -77,14 +77,15 @@ class LessonAdmin(admin.ModelAdmin):
     search_fields = ['title', 'description', 'course__title']
     
     fieldsets = (
-        ('Basic Information', {
-            'fields': ('course', 'title', 'description')
+        ('Basic Info', {
+            'fields': ('course', 'title', 'description', 'lesson_type', 'order')
         }),
         ('Content', {
-            'fields': ('lesson_type', 'video_url', 'text_content')
+            'fields': ('video_url', 'video_file', 'text_content'),
+            'description': 'Use either video_url (YouTube) OR video_file (upload), not both'
         }),
         ('Settings', {
-            'fields': ('order', 'duration', 'is_free_preview')
+            'fields': ('duration', 'is_free_preview')
         }),
     )
 class CommentInline(admin.TabularInline):
