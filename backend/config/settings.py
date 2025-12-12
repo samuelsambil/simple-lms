@@ -160,10 +160,14 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173'
-).split(',')
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+]
+
+# Add this for production
+if not DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # For now, we'll restrict this later
 
 CORS_ALLOW_CREDENTIALS = True
 
