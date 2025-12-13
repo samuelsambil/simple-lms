@@ -10,9 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+"""
+Django settings for simple-lms project.
+Add/Update these sections in your settings.py
+"""
+
+
 from pathlib import Path
 import os
 from decouple import config
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +37,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'https://etornam-zk6l.onrender.com',  # Add your actual Render URL
+    'https://etornam-zdue.onrender.com',  # Add your actual Render URL
 ]
 
 # Application definition
@@ -160,18 +167,24 @@ REST_FRAMEWORK = {
 }
 
 # JWT Settings
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://simple-lms-five.vercel.app',  # Add your actual Vercel URL
+    'https://etornam-one.vercel.app',  # Add your actual Vercel URL
 ]
 
 # Add this for production
@@ -179,6 +192,18 @@ if not DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True  # For now, we'll restrict this later
 
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Media Files (uploads)
 MEDIA_URL = '/media/'
@@ -191,3 +216,15 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
 # Allowed video formats
 ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.webm']
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500MB max video size
+
+# ========== GOOGLE OAUTH CONFIGURATION ==========
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+
+# ========== EMAIL CONFIGURATION (Optional - for password reset) ==========
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development only
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Production
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
