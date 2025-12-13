@@ -82,11 +82,64 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google OAuth Login
+  const loginWithGoogle = async (googleToken) => {
+    try {
+      // Send Google token to your backend
+      const response = await api.post('/auth/google/', {
+        token: googleToken,
+      });
+
+      const { access, refresh, user } = response.data;
+      
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      setUser(user);
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Google login failed',
+      };
+    }
+  };
+
+  // Initialize Google Sign-In
+  const initializeGoogleSignIn = (callback) => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
+        callback: callback,
+      });
+    }
+  };
+
+  // Render Google Button
+  const renderGoogleButton = (elementId) => {
+    if (window.google) {
+      window.google.accounts.id.renderButton(
+        document.getElementById(elementId),
+        { 
+          theme: 'outline', 
+          size: 'large',
+          width: '100%',
+          text: 'continue_with',
+        }
+      );
+    }
+  };
+
   // Logout user
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
+    
+    // Sign out from Google
+    if (window.google) {
+      window.google.accounts.id.disableAutoSelect();
+    }
   };
 
   const value = {
@@ -94,6 +147,9 @@ export const AuthProvider = ({ children }) => {
     loading,
     register,
     login,
+    loginWithGoogle,
+    initializeGoogleSignIn,
+    renderGoogleButton,
     logout,
     isAuthenticated: !!user,
   };
