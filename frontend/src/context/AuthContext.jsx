@@ -1,158 +1,164 @@
-import { createContext, useState, useEffect } from 'react';
-import api from '../api/axios';
+import { createContext, useState, useContext, useEffect } from 'react';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user on app start
+  // Check if user is logged in on mount
   useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        try {
-          const response = await api.get('/auth/me/');
-          setUser(response.data);
-        } catch (error) {
-          console.error('Failed to load user:', error);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-        }
-      }
-      
-      setLoading(false);
-    };
-
-    loadUser();
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('access_token');
+    
+    if (storedUser && token) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  // Register new user
-  const register = async (email, password, firstName, lastName, role) => {
+  // Login function (mock - will connect to backend later)
+  const login = async (credentials) => {
     try {
-      const response = await api.post('/auth/register/', {
-        email,
-        password,
-        password2: password,
-        first_name: firstName,
-        last_name: lastName,
-        role,
-      });
+      // MOCK LOGIN - Replace with real API call
+      if (credentials.email && credentials.password) {
+        const mockUser = {
+          id: 1,
+          email: credentials.email,
+          first_name: 'John',
+          last_name: 'Doe',
+          role: credentials.email.includes('instructor') ? 'instructor' : 'student',
+          avatar: null,
+          full_name: 'John Doe'
+        };
+        
+        const mockTokens = {
+          access: 'mock_access_token_' + Date.now(),
+          refresh: 'mock_refresh_token_' + Date.now()
+        };
 
-      const { access, refresh, user } = response.data;
+        localStorage.setItem('access_token', mockTokens.access);
+        localStorage.setItem('refresh_token', mockTokens.refresh);
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        setUser(mockUser);
+        return { success: true, user: mockUser };
+      }
       
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      setUser(user);
-
-      return { success: true };
+      throw new Error('Invalid credentials');
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data || 'Registration failed',
-      };
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  // Login user
-  const login = async (email, password) => {
+  // Register function (mock - will connect to backend later)
+  const register = async (userData) => {
     try {
-      const response = await api.post('/auth/login/', {
-        email,
-        password,
-      });
-
-      const { access, refresh } = response.data;
-      
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-
-      // Get user info
-      const userResponse = await api.get('/auth/me/');
-      setUser(userResponse.data);
-
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.detail || 'Login failed',
+      // MOCK REGISTER - Replace with real API call
+      const mockUser = {
+        id: Date.now(),
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        role: userData.role || 'student',
+        avatar: null,
+        full_name: `${userData.first_name} ${userData.last_name}`
       };
+      
+      const mockTokens = {
+        access: 'mock_access_token_' + Date.now(),
+        refresh: 'mock_refresh_token_' + Date.now()
+      };
+
+      localStorage.setItem('access_token', mockTokens.access);
+      localStorage.setItem('refresh_token', mockTokens.refresh);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      setUser(mockUser);
+      return { success: true, user: mockUser };
+    } catch (error) {
+      console.error('Register error:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  // Google OAuth Login
-  const loginWithGoogle = async (googleToken) => {
+  // Google OAuth login (mock - will connect to backend later)
+  const googleLogin = async (googleToken) => {
     try {
-      // Send Google token to your backend
-      const response = await api.post('/auth/google/', {
-        token: googleToken,
-      });
-
-      const { access, refresh, user } = response.data;
-      
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      setUser(user);
-
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.detail || 'Google login failed',
+      // MOCK GOOGLE LOGIN - Replace with real API call to /api/auth/google/
+      const mockUser = {
+        id: Date.now(),
+        email: 'google.user@gmail.com',
+        first_name: 'Google',
+        last_name: 'User',
+        role: 'student',
+        avatar: null,
+        full_name: 'Google User',
+        is_google_user: true
       };
+      
+      const mockTokens = {
+        access: 'mock_access_token_' + Date.now(),
+        refresh: 'mock_refresh_token_' + Date.now()
+      };
+
+      localStorage.setItem('access_token', mockTokens.access);
+      localStorage.setItem('refresh_token', mockTokens.refresh);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      setUser(mockUser);
+      return { success: true, user: mockUser };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  // Initialize Google Sign-In
-  const initializeGoogleSignIn = (callback) => {
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
-        callback: callback,
-      });
-    }
-  };
-
-  // Render Google Button
-  const renderGoogleButton = (elementId) => {
-    if (window.google) {
-      window.google.accounts.id.renderButton(
-        document.getElementById(elementId),
-        { 
-          theme: 'outline', 
-          size: 'large',
-          width: '100%',
-          text: 'continue_with',
-        }
-      );
-    }
-  };
-
-  // Logout user
+  // Logout function
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
     setUser(null);
     
-    // Sign out from Google
-    if (window.google) {
+    // Google sign-out (if Google user)
+    if (window.google && user?.is_google_user) {
       window.google.accounts.id.disableAutoSelect();
     }
+  };
+
+  // Update user profile
+  const updateUser = (updatedData) => {
+    const updatedUser = { ...user, ...updatedData };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   const value = {
     user,
     loading,
-    register,
     login,
-    loginWithGoogle,
-    initializeGoogleSignIn,
-    renderGoogleButton,
+    register,
+    googleLogin,
     logout,
+    updateUser,
     isAuthenticated: !!user,
+    isStudent: user?.role === 'student',
+    isInstructor: user?.role === 'instructor'
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
