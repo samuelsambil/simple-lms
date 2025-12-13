@@ -149,15 +149,7 @@ function App() {
                 <CourseDiscussions />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/courses/:courseId/discussions/:discussionId"
-            element={
-              <ProtectedRoute>
-                <DiscussionDetail />
-              </ProtectedRoute>
-            }
-          />
+      
 
           {/* ========== 404 NOT FOUND ========== */}
           <Route
