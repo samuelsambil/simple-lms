@@ -36,6 +36,3 @@ class UserAdmin(BaseUserAdmin):
     )
     
     readonly_fields = ['created_at', 'updated_at', 'last_login']
-
-
-admin.site.register(User, UserAdmin)
