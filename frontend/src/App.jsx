@@ -20,8 +20,6 @@ import CourseAnalytics from './pages/CourseAnalytics';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizResults from './pages/QuizResults';
 import CourseDiscussions from './pages/CourseDiscussions';
-import DiscussionDetail from './pages/DiscussionDetail';
-// or
 
 function App() {
   return (
