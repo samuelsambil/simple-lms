@@ -72,7 +72,6 @@ function CoursePlayer() {
       });
 
       await fetchEnrollment();
-      alert('Lesson marked as complete! 🎉');
     } catch (err) {
       setError('Failed to mark lesson as complete');
     } finally {
@@ -106,18 +105,22 @@ function CoursePlayer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading course...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-400 mb-4"></div>
+          <div className="text-xl text-white font-medium">Loading course...</div>
+        </div>
       </div>
     );
   }
 
   if (error && !enrollment) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-xl text-red-600 mb-4">{error}</div>
-          <Link to="/courses" className="text-blue-600 hover:underline">
+          <div className="text-6xl mb-4">🔒</div>
+          <div className="text-2xl text-white mb-4 font-bold">{error}</div>
+          <Link to="/courses" className="text-blue-400 hover:text-blue-300 underline text-lg">
             Browse Courses
           </Link>
         </div>
@@ -126,30 +129,31 @@ function CoursePlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 text-white">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-black/30 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-xl font-bold text-gray-900">
-                Simple LMS
+              <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
+                SimpleLMS
               </Link>
-              <span className="text-gray-600">
+              <div className="hidden md:block text-gray-300 max-w-md truncate">
                 {enrollment?.course.title}
-              </span>
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
               <Link
                 to="/my-courses"
-                className="text-blue-600 hover:text-blue-700"
+                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors font-medium"
               >
-                ← Back to My Courses
+                <span>←</span>
+                <span className="hidden sm:inline">My Courses</span>
               </Link>
               <button
                 onClick={logout}
-                className="text-red-600 hover:text-red-700"
+                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors text-sm font-medium"
               >
                 Logout
               </button>
@@ -158,21 +162,21 @@ function CoursePlayer() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="flex h-[calc(100vh-73px)]">
         {/* Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="font-bold text-lg mb-2">Course Content</h2>
+        <div className="w-80 bg-black/40 backdrop-blur-xl border-r border-white/10 overflow-y-auto">
+          <div className="p-4 border-b border-white/10">
+            <h2 className="font-bold text-lg mb-3 text-white">Course Content</h2>
             <div className="flex items-center gap-2 text-sm">
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
+              <div className="flex-1 bg-white/10 rounded-full h-2">
                 <div
-                  className="bg-green-600 h-2 rounded-full transition-all"
+                  className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
                   style={{
                     width: `${enrollment?.progress_percentage || 0}%`,
                   }}
                 ></div>
               </div>
-              <span className="text-gray-600">
+              <span className="text-gray-300 font-semibold">
                 {Math.round(enrollment?.progress_percentage || 0)}%
               </span>
             </div>
@@ -188,37 +192,40 @@ function CoursePlayer() {
                 <button
                   key={lesson.id}
                   onClick={() => setCurrentLesson(lesson)}
-                  className={`w-full text-left p-3 rounded-lg mb-2 transition ${
+                  className={`w-full text-left p-4 rounded-xl mb-2 transition-all duration-300 ${
                     isActive
-                      ? 'bg-blue-50 border-2 border-blue-500'
-                      : 'hover:bg-gray-50 border-2 border-transparent'
+                      ? 'bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-2 border-blue-400 shadow-lg'
+                      : 'hover:bg-white/5 border-2 border-transparent'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-1">
                       {isCompleted ? (
-                        <span className="text-green-600 text-xl">✓</span>
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white text-sm font-bold">
+                          ✓
+                        </div>
                       ) : (
-                        <span className="text-gray-400 text-xl">○</span>
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-500 flex items-center justify-center text-gray-500 text-sm">
+                          {index + 1}
+                        </div>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500 mb-1">
+                      <div className="text-xs text-gray-400 mb-1 uppercase tracking-wider">
                         Lesson {index + 1}
                       </div>
 
-                      {/* TITLE + QUIZ BADGE */}
-                      <div className="font-medium text-gray-900 mb-1">
-                        {lesson.title}
+                      <div className="font-semibold text-white mb-1 flex items-center gap-2 flex-wrap">
+                        <span className="line-clamp-2">{lesson.title}</span>
                         {lesson.quiz && (
-                          <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-1 rounded-full font-semibold whitespace-nowrap">
                             📝 Quiz
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
                         <span>
                           {lesson.lesson_type === 'video' ? '🎥' : '📝'}
                         </span>
@@ -233,35 +240,33 @@ function CoursePlayer() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-800/50 to-blue-900/50">
           {currentLesson ? (
             <div className="max-w-5xl mx-auto p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">
+              <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
                 {currentLesson.title}
               </h1>
 
               {error && (
-                <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                  {error}
+                <div className="bg-red-500/20 border-l-4 border-red-500 text-red-200 px-6 py-4 rounded-lg mb-6 flex items-center gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <span className="font-medium">{error}</span>
                 </div>
               )}
 
               {/* Video Player */}
               {currentLesson.lesson_type === 'video' && (
-                <div className="mb-6">
-                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                <div className="mb-8">
+                  <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                     {currentLesson.video_file_url ? (
-                      // Uploaded video file
                       <video
                         controls
                         className="w-full h-full"
-                        poster=""
                       >
                         <source src={currentLesson.video_file_url} type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
                     ) : currentLesson.video_url ? (
-                      // YouTube video
                       <iframe
                         src={getVideoEmbedUrl(currentLesson.video_url)}
                         title={currentLesson.title}
@@ -270,8 +275,11 @@ function CoursePlayer() {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       ></iframe>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white">
-                        <p>No video available</p>
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <div className="text-6xl mb-4">🎥</div>
+                          <p>No video available</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -281,8 +289,8 @@ function CoursePlayer() {
               {/* Text Content */}
               {currentLesson.lesson_type === 'text' &&
                 currentLesson.text_content && (
-                  <div className="prose max-w-none mb-6 bg-white p-8 rounded-lg shadow">
-                    <div className="whitespace-pre-wrap">
+                  <div className="prose prose-invert max-w-none mb-8 bg-white/5 backdrop-blur-lg p-8 rounded-2xl border border-white/10 shadow-xl">
+                    <div className="whitespace-pre-wrap text-gray-200 leading-relaxed">
                       {currentLesson.text_content}
                     </div>
                   </div>
@@ -290,61 +298,72 @@ function CoursePlayer() {
 
               {/* Description */}
               {currentLesson.description && (
-                <div className="bg-white p-6 rounded-lg shadow mb-6">
-                  <h3 className="font-bold text-lg mb-2">About this lesson</h3>
-                  <p className="text-gray-600">
+                <div className="bg-white/5 backdrop-blur-lg p-6 rounded-2xl border border-white/10 mb-6 shadow-xl">
+                  <h3 className="font-bold text-lg mb-2 text-white flex items-center gap-2">
+                    <span>📖</span>
+                    <span>About this lesson</span>
+                  </h3>
+                  <p className="text-gray-300 leading-relaxed">
                     {currentLesson.description}
                   </p>
                 </div>
               )}
 
-              {/* Quiz Button - ADD THIS */}
-{currentLesson.quiz && (
-  <div className="bg-white p-6 rounded-lg shadow mb-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <h3 className="font-bold text-lg text-gray-900 mb-2">
-          📝 Quiz Available
-        </h3>
-        <p className="text-gray-600">
-          Test your knowledge of this lesson
-        </p>
-      </div>
-      <Link
-        to={`/quiz/${currentLesson.quiz.id}/take`}
-        className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-medium"
-      >
-        Take Quiz
-      </Link>
-    </div>
-  </div>
-)}
+              {/* Quiz Button */}
+              {currentLesson.quiz && (
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-lg p-6 rounded-2xl border border-purple-400/30 mb-6 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-xl text-white mb-2 flex items-center gap-2">
+                        <span>📝</span>
+                        <span>Quiz Available</span>
+                      </h3>
+                      <p className="text-gray-300">
+                        Test your knowledge of this lesson
+                      </p>
+                    </div>
+                    <Link
+                      to={`/quiz/${currentLesson.quiz.id}/take`}
+                      className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 whitespace-nowrap"
+                    >
+                      Take Quiz
+                    </Link>
+                  </div>
+                </div>
+              )}
 
-{/* Complete Lesson Button */}
-<div className="bg-white p-6 rounded-lg shadow">
-  {isLessonCompleted(currentLesson.id) ? (
-    <div className="text-center">
-      <div className="text-green-600 font-medium text-lg mb-2">
-        ✓ Lesson Completed
-      </div>
-      <p className="text-gray-600">
-        Great job! Move on to the next lesson.
-      </p>
-    </div>
-  ) : (
-    <button
-      onClick={handleCompleteLesson}
-      disabled={completing}
-      className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
-    >
-      {completing ? 'Marking as complete...' : 'Mark as Complete'}
-    </button>
-  )}
-</div>
-
+              {/* Complete Lesson Button */}
+              <div className="bg-white/5 backdrop-blur-lg p-6 rounded-2xl border border-white/10 mb-6 shadow-xl">
+                {isLessonCompleted(currentLesson.id) ? (
+                  <div className="text-center">
+                    <div className="text-green-400 font-bold text-xl mb-2 flex items-center justify-center gap-2">
+                      <span className="text-3xl">✓</span>
+                      <span>Lesson Completed</span>
+                    </div>
+                    <p className="text-gray-300">
+                      Great job! Move on to the next lesson.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleCompleteLesson}
+                    disabled={completing}
+                    className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-lg shadow-lg hover:shadow-green-500/50 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {completing ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⟳</span>
+                        Marking as complete...
+                      </span>
+                    ) : (
+                      'Mark as Complete'
+                    )}
+                  </button>
+                )}
+              </div>
 
               {/* Navigation */}
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between gap-4">
                 <button
                   onClick={() => {
                     const currentIndex =
@@ -362,7 +381,7 @@ function CoursePlayer() {
                       (lp) => lp.lesson.id === currentLesson.id
                     ) === 0
                   }
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 disabled:opacity-50"
+                  className="px-8 py-3 rounded-xl bg-white/10 backdrop-blur-lg text-white font-semibold hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 border border-white/20"
                 >
                   ← Previous Lesson
                 </button>
@@ -389,7 +408,7 @@ function CoursePlayer() {
                     ) ===
                     enrollment.lesson_progress.length - 1
                   }
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg hover:shadow-blue-500/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
                 >
                   Next Lesson →
                 </button>
@@ -397,8 +416,9 @@ function CoursePlayer() {
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-600">
-                <p className="text-xl">Select a lesson to start learning</p>
+              <div className="text-center text-gray-400">
+                <div className="text-7xl mb-4">📚</div>
+                <p className="text-2xl font-semibold">Select a lesson to start learning</p>
               </div>
             </div>
           )}
