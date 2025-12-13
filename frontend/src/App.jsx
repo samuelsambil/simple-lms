@@ -20,13 +20,7 @@ import CourseAnalytics from './pages/CourseAnalytics';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizResults from './pages/QuizResults';
 import CourseDiscussions from './pages/CourseDiscussions';
-import DiscussionDetail from '.
-
-
-
-
-
-/pages/DiscussionDetail';
+import DiscussionDetail from './pages/DiscussionDetail';
 
 function App() {
   return (
