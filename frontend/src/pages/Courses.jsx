@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../utils/api';
+import axios from 'axios';
+
 
 const Courses = () => {
   const { user, logout, isStudent, isInstructor } = useAuth();
