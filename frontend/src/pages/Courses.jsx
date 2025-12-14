@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const Courses = () => {
   const { user, logout, isStudent, isInstructor } = useAuth();
@@ -9,136 +10,84 @@ const Courses = () => {
   
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('popular');
+  const [sortBy, setSortBy] = useState('-created_at');
+  
+  // State for API data
+  const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Categories
-  const categories = [
-    'All',
-    'Web Development',
-    'Data Science',
-    'Design',
-    'Business',
-    'Marketing',
-    'Photography',
-    'Music',
-    'Health & Fitness'
-  ];
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  // Mock courses data
-  const allCourses = [
-    {
-      id: 1,
-      title: 'Complete Web Development Bootcamp',
-      instructor: 'Sarah Johnson',
-      image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop',
-      students: 12500,
-      rating: 4.8,
-      reviews: 2300,
-      price: 49.99,
-      category: 'Web Development',
-      level: 'Beginner',
-      duration: '40 hours'
-    },
-    {
-      id: 2,
-      title: 'Machine Learning A-Z',
-      instructor: 'Dr. Michael Chen',
-      image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=600&fit=crop',
-      students: 8900,
-      rating: 4.9,
-      reviews: 1800,
-      price: 59.99,
-      category: 'Data Science',
-      level: 'Advanced',
-      duration: '50 hours'
-    },
-    {
-      id: 3,
-      title: 'UI/UX Design Masterclass',
-      instructor: 'Emily Rodriguez',
-      image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop',
-      students: 6700,
-      rating: 4.7,
-      reviews: 1200,
-      price: 39.99,
-      category: 'Design',
-      level: 'Intermediate',
-      duration: '30 hours'
-    },
-    {
-      id: 4,
-      title: 'Digital Marketing Strategy',
-      instructor: 'James Wilson',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-      students: 5400,
-      rating: 4.6,
-      reviews: 980,
-      price: 44.99,
-      category: 'Marketing',
-      level: 'Beginner',
-      duration: '25 hours'
-    },
-    {
-      id: 5,
-      title: 'Python for Data Science',
-      instructor: 'Lisa Anderson',
-      image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=600&fit=crop',
-      students: 9200,
-      rating: 4.8,
-      reviews: 2100,
-      price: 54.99,
-      category: 'Data Science',
-      level: 'Intermediate',
-      duration: '45 hours'
-    },
-    {
-      id: 6,
-      title: 'Photography Fundamentals',
-      instructor: 'David Martinez',
-      image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&h=600&fit=crop',
-      students: 4100,
-      rating: 4.9,
-      reviews: 890,
-      price: 34.99,
-      category: 'Photography',
-      level: 'Beginner',
-      duration: '20 hours'
-    },
-  ];
+  // Fetch courses when filters change
+  useEffect(() => {
+    fetchCourses();
+  }, [searchQuery, selectedCategory, sortBy]);
 
-  // Filter courses based on search and category
-  const filteredCourses = allCourses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         course.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Sort courses
-  const sortedCourses = [...filteredCourses].sort((a, b) => {
-    switch (sortBy) {
-      case 'popular':
-        return b.students - a.students;
-      case 'rating':
-        return b.rating - a.rating;
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      default:
-        return 0;
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/courses/categories/');
+      setCategories([{ id: 'all', name: 'All', slug: 'all' }, ...response.data]);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      // Use default categories if fetch fails
+      setCategories([
+        { id: 'all', name: 'All', slug: 'all' },
+        { id: 1, name: 'Web Development', slug: 'web-development' },
+        { id: 2, name: 'Data Science', slug: 'data-science' },
+        { id: 3, name: 'Design', slug: 'design' },
+      ]);
     }
-  });
+  };
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+      
+      if (selectedCategory && selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      
+      if (sortBy) {
+        params.append('ordering', sortBy);
+      }
+      
+      const response = await api.get(`/courses/courses/?${params.toString()}`);
+      setCourses(response.data);
+    } catch (err) {
+      console.error('Error fetching courses:', err);
+      setError('Failed to load courses. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   const clearSearch = () => {
     setSearchQuery('');
     navigate('/courses');
+  };
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
   };
 
   return (
@@ -255,16 +204,18 @@ const Courses = () => {
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category === 'All' ? 'all' : category)}
+                      key={category.slug}
+                      onClick={() => setSelectedCategory(category.slug === 'all' ? 'all' : category.slug)}
                       className={`w-full text-left px-3 py-2 rounded-lg transition ${
-                        (selectedCategory === 'all' && category === 'All') ||
-                        selectedCategory === category
+                        selectedCategory === category.slug
                           ? 'bg-indigo-50 text-indigo-600 font-medium'
                           : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      {category}
+                      {category.name}
+                      {category.course_count !== undefined && category.slug !== 'all' && (
+                        <span className="text-xs ml-2 text-gray-500">({category.course_count})</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -275,13 +226,13 @@ const Courses = () => {
                 <h4 className="font-medium text-gray-700 mb-3">Sort By</h4>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => handleSortChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="popular">Most Popular</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
+                  <option value="-created_at">Newest First</option>
+                  <option value="created_at">Oldest First</option>
+                  <option value="title">Title (A-Z)</option>
+                  <option value="-title">Title (Z-A)</option>
                 </select>
               </div>
             </div>
@@ -289,80 +240,115 @@ const Courses = () => {
 
           {/* Courses Grid */}
           <main className="flex-1">
-            <div className="mb-6 flex justify-between items-center">
-              <p className="text-gray-600">
-                {sortedCourses.length} {sortedCourses.length === 1 ? 'course' : 'courses'} found
-              </p>
-            </div>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
 
-            {sortedCourses.length > 0 ? (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {sortedCourses.map((course) => (
-                  <Link
-                    key={course.id}
-                    to={`/courses/${course.id}`}
-                    className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
-                  >
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={course.image}
-                        alt={course.title}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600">
-                        {course.category}
-                      </div>
-                      <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-medium">
-                        {course.level}
-                      </div>
-                    </div>
-
-                    <div className="p-5">
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition line-clamp-2">
-                        {course.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-3">By {course.instructor}</p>
-
-                      <div className="flex items-center space-x-3 text-sm text-gray-500 mb-3">
-                        <span className="flex items-center">
-                          <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          {course.rating}
-                        </span>
-                        <span>({course.reviews.toLocaleString()})</span>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                          {course.students.toLocaleString()}
-                        </div>
-                        <span className="text-2xl font-bold text-indigo-600">${course.price}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+            {/* Loading State */}
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading courses...</p>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-16">
-                <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('all');
-                  }}
-                  className="text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Clear all filters
-                </button>
-              </div>
+              <>
+                <div className="mb-6 flex justify-between items-center">
+                  <p className="text-gray-600">
+                    {courses.length} {courses.length === 1 ? 'course' : 'courses'} found
+                  </p>
+                </div>
+
+                {courses.length > 0 ? (
+                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {courses.map((course) => (
+                      <Link
+                        key={course.id}
+                        to={`/courses/${course.id}`}
+                        className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+                      >
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={course.thumbnail_url || course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop'}
+                            alt={course.title}
+                            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                            onError={(e) => {
+                              e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop';
+                            }}
+                          />
+                          {course.category && (
+                            <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600">
+                              {course.category.name}
+                            </div>
+                          )}
+                          <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-medium capitalize">
+                            {course.difficulty}
+                          </div>
+                        </div>
+
+                        <div className="p-5">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition line-clamp-2">
+                            {course.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3">
+                            By {course.instructor?.first_name} {course.instructor?.last_name}
+                          </p>
+
+                          <div className="flex items-center space-x-3 text-sm text-gray-500 mb-3">
+                            {course.average_rating > 0 && (
+                              <>
+                                <span className="flex items-center">
+                                  <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  {course.average_rating.toFixed(1)}
+                                </span>
+                                <span>({course.review_count?.toLocaleString() || 0})</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                            <div className="flex items-center text-sm text-gray-500">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                              </svg>
+                              {course.total_students?.toLocaleString() || 0} students
+                            </div>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                              {course.total_lessons || 0} lessons
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses found</h3>
+                    <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCategory('all');
+                      }}
+                      className="text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </main>
         </div>
