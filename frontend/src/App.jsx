@@ -151,7 +151,8 @@ function App() {
               </ProtectedRoute>
             }
       
-
+          />
+          
           {/* ========== 404 NOT FOUND ========== */}
           <Route
             path="*"

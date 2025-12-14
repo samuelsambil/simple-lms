@@ -1,291 +1,276 @@
-import { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function WriteReview() {
+const WriteReview = () => {
   const { courseId } = useParams();
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [course, setCourse] = useState(null);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
+  const [review, setReview] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    fetchCourse();
-  }, [courseId, user, navigate]);
-
-  const fetchCourse = async () => {
-    try {
-      const response = await api.get(`/courses/${courseId}/`);
-      setCourse(response.data);
-    } catch (err) {
-      setError('Failed to load course');
-    }
+  // Mock course data
+  const course = {
+    id: parseInt(courseId),
+    title: 'Complete Web Development Bootcamp',
+    instructor: 'Sarah Johnson',
+    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop'
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (rating === 0) {
       setError('Please select a rating');
       return;
     }
 
-    setError('');
+    if (review.trim().length < 10) {
+      setError('Review must be at least 10 characters');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.post('/reviews/', {
-        course: parseInt(courseId),
-        rating,
-        review_text: reviewText,
-      });
+      // Mock API call - Replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      setSuccess(true);
-      setTimeout(() => {
-        navigate(`/courses/${courseId}`);
-      }, 2000);
+      console.log('Submitting review:', { courseId, rating, review });
+
+      // Show success and redirect
+      alert('Review submitted successfully!');
+      navigate(`/courses/${courseId}`);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to submit review');
+      setError('Failed to submit review. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const getRatingLabel = (stars) => {
-    const labels = {
-      1: '1 star - Poor',
-      2: '2 stars - Fair',
-      3: '3 stars - Good',
-      4: '4 stars - Very Good',
-      5: '5 stars - Excellent!'
-    };
-    return labels[stars] || '';
+  const ratingLabels = {
+    1: 'Poor',
+    2: 'Fair',
+    3: 'Good',
+    4: 'Very Good',
+    5: 'Excellent'
   };
 
-  if (!course) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-600 mb-4"></div>
-          <div className="text-xl text-gray-600 font-medium">Loading...</div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">A</span>
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Academe
+              </span>
+            </Link>
+
+            <Link to="/profile" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user?.first_name?.[0] || 'U'}
+                </span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Page Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link
+            to={`/courses/${courseId}`}
+            className="inline-flex items-center text-indigo-100 hover:text-white mb-4 transition"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Course
+          </Link>
+          <h1 className="text-4xl font-bold mb-2">Write a Review</h1>
+          <p className="text-indigo-100 text-lg">Share your experience with other learners</p>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-yellow-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
-                SimpleLMS
-              </Link>
-              <Link 
-                to={`/courses/${courseId}`} 
-                className="flex items-center gap-2 text-gray-600 hover:text-yellow-600 transition-colors font-medium"
-              >
-                <span>←</span>
-                <span>Back to Course</span>
-              </Link>
+      {/* Course Info */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center space-x-4">
+            <img
+              src={course.image}
+              alt={course.title}
+              className="w-24 h-16 rounded-lg object-cover"
+            />
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{course.title}</h2>
+              <p className="text-gray-600">by {course.instructor}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Review Form */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8">
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          {/* Rating Section */}
+          <div className="mb-8">
+            <label className="block text-lg font-semibold text-gray-900 mb-4">
+              How would you rate this course? *
+            </label>
             
-            {user && (
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-white font-bold">
-                    {(user.first_name || user.email).charAt(0).toUpperCase()}
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {user.first_name || user.email}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                  </div>
-                </div>
+            <div className="flex items-center space-x-2 mb-2">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
-                  onClick={logout}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-red-500/50 transition-all duration-300 hover:scale-105"
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="focus:outline-none transition-transform hover:scale-110"
                 >
-                  Logout
+                  <svg
+                    className={`w-12 h-12 ${
+                      star <= (hoverRating || rating)
+                        ? 'text-yellow-400 fill-current'
+                        : 'text-gray-300'
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
+                  </svg>
                 </button>
-              </div>
+              ))}
+            </div>
+
+            {rating > 0 && (
+              <p className="text-lg font-medium text-indigo-600">
+                {ratingLabels[rating]}
+              </p>
             )}
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-10 border border-yellow-100">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">⭐</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
-              Write a Review
-            </h1>
-            <p className="text-lg text-gray-600">
-              Share your experience with <span className="font-semibold text-gray-900">{course.title}</span>
-            </p>
-          </div>
-
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 px-6 py-4 rounded-lg mb-6 flex items-center gap-3 animate-pulse">
-              <span className="text-3xl">🎉</span>
-              <div>
-                <p className="font-bold">Review submitted successfully!</p>
-                <p className="text-sm">Redirecting you back to the course...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-lg mb-6 flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <span className="font-medium">{error}</span>
-            </div>
-          )}
-
-          <div className="space-y-8">
-            {/* Star Rating */}
-            <div>
-              <label className="block text-lg font-bold text-gray-900 mb-4">
-                Your Rating *
-              </label>
-              <div className="flex flex-col items-center gap-4 p-8 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border-2 border-yellow-200">
-                <div className="flex items-center gap-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      disabled={loading || success}
-                      className="text-6xl focus:outline-none transition-all duration-200 hover:scale-125 disabled:cursor-not-allowed"
-                    >
-                      <span
-                        className={
-                          star <= (hoverRating || rating)
-                            ? 'text-yellow-400 drop-shadow-lg'
-                            : 'text-gray-300'
-                        }
-                      >
-                        ★
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {(rating > 0 || hoverRating > 0) && (
-                  <p className="text-lg font-semibold text-gray-700">
-                    {getRatingLabel(hoverRating || rating)}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Review Text */}
-            <div>
-              <label htmlFor="review" className="block text-lg font-bold text-gray-900 mb-3">
-                Your Review (Optional)
-              </label>
-              <textarea
-                id="review"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                disabled={loading || success}
-                rows="8"
-                placeholder="Share your thoughts about this course... What did you like? What could be improved? How has it helped you?"
-                className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-yellow-500/20 focus:border-yellow-500 transition-all duration-300 text-gray-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
-              ></textarea>
-              <p className="text-sm text-gray-500 mt-2 flex items-start gap-2">
-                <span>💡</span>
-                <span>Your honest feedback helps other students make informed decisions</span>
+          {/* Review Text */}
+          <div className="mb-8">
+            <label htmlFor="review" className="block text-lg font-semibold text-gray-900 mb-4">
+              Write your review *
+            </label>
+            <textarea
+              id="review"
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              rows={8}
+              placeholder="Share your experience with this course. What did you like? What could be improved?"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            />
+            <div className="flex justify-between mt-2">
+              <p className="text-sm text-gray-500">
+                Minimum 10 characters
+              </p>
+              <p className={`text-sm ${review.length < 10 ? 'text-gray-500' : 'text-green-600'}`}>
+                {review.length} characters
               </p>
             </div>
-
-            {/* Submit Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={handleSubmit}
-                disabled={loading || rating === 0 || success}
-                className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">⟳</span>
-                    Submitting...
-                  </span>
-                ) : success ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span>✓</span>
-                    Submitted!
-                  </span>
-                ) : (
-                  'Submit Review'
-                )}
-              </button>
-              
-              <Link
-                to={`/courses/${courseId}`}
-                className="px-8 py-4 border-2 border-gray-300 rounded-xl hover:bg-gray-50 font-semibold text-center transition-all duration-300 hover:scale-105 flex items-center justify-center"
-              >
-                Cancel
-              </Link>
-            </div>
           </div>
-        </div>
 
-        {/* Tips Section */}
-        <div className="mt-8 bg-blue-50 rounded-2xl p-6 border border-blue-200">
-          <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <span className="text-2xl">📝</span>
-            <span>Tips for writing a great review:</span>
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li className="flex items-start gap-2">
-              <span className="text-green-500 font-bold mt-1">✓</span>
-              <span>Be specific about what you liked or didn't like</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-500 font-bold mt-1">✓</span>
-              <span>Mention how the course helped you achieve your goals</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-500 font-bold mt-1">✓</span>
-              <span>Share any suggestions for improvement</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-500 font-bold mt-1">✓</span>
-              <span>Be honest and constructive in your feedback</span>
-            </li>
-          </ul>
-        </div>
-      </main>
+          {/* Guidelines */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Review Guidelines
+            </h3>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li className="flex items-start">
+                <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Be specific about what you liked or didn't like
+              </li>
+              <li className="flex items-start">
+                <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Keep your review respectful and constructive
+              </li>
+              <li className="flex items-start">
+                <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Focus on the course content, not the instructor personally
+              </li>
+              <li className="flex items-start">
+                <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Avoid profanity and inappropriate language
+              </li>
+            </ul>
+          </div>
 
-      {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm">
-          <p>© 2024 SimpleLMS. Empowering learners worldwide 🌍</p>
-        </div>
-      </footer>
+          {/* Submit Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              to={`/courses/${courseId}`}
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 text-center rounded-lg font-semibold hover:bg-gray-50 transition"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={loading || rating === 0 || review.length < 10}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </>
+              ) : (
+                'Submit Review'
+              )}
+            </button>
+          </div>
+
+          {/* Privacy Note */}
+          <p className="text-sm text-gray-500 text-center mt-6">
+            Your review will be visible to all users and cannot be deleted once submitted.
+          </p>
+        </form>
+      </div>
     </div>
   );
-}
+};
 
 export default WriteReview;
