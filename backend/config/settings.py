@@ -37,7 +37,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'https://etornam-zdue.onrender.com',  # Add your actual Render URL
+    # Add your actual Render URL
 ]
 
 # Application definition
@@ -182,9 +182,10 @@ SIMPLE_JWT = {
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://etornam-one.vercel.app',  # Add your actual Vercel URL
+    "http://localhost:5173",  # Vite default
+    "http://localhost:3000",  # React default
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
 ]
 
 # Add this for production

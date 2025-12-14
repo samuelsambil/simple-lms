@@ -1,413 +1,374 @@
-import { useState, useEffect, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function Courses() {
-  const [courses, setCourses] = useState([]);
-  const [categories, setCategories] = useState([]);
+const Courses = () => {
+  const { user, logout, isStudent, isInstructor } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
-  const [error, setError] = useState('');
-  const { user, logout } = useContext(AuthContext);
-  const location = useLocation();
+  const [sortBy, setSortBy] = useState('popular');
 
-  // Check for search query in URL on mount
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const searchParam = params.get('search');
-    if (searchParam) {
-      setSearchQuery(searchParam);
+  // Categories
+  const categories = [
+    'All',
+    'Web Development',
+    'Data Science',
+    'Design',
+    'Business',
+    'Marketing',
+    'Photography',
+    'Music',
+    'Health & Fitness'
+  ];
+
+  // Mock courses data
+  const allCourses = [
+    {
+      id: 1,
+      title: 'Complete Web Development Bootcamp',
+      instructor: 'Sarah Johnson',
+      image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop',
+      students: 12500,
+      rating: 4.8,
+      reviews: 2300,
+      price: 49.99,
+      category: 'Web Development',
+      level: 'Beginner',
+      duration: '40 hours'
+    },
+    {
+      id: 2,
+      title: 'Machine Learning A-Z',
+      instructor: 'Dr. Michael Chen',
+      image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=600&fit=crop',
+      students: 8900,
+      rating: 4.9,
+      reviews: 1800,
+      price: 59.99,
+      category: 'Data Science',
+      level: 'Advanced',
+      duration: '50 hours'
+    },
+    {
+      id: 3,
+      title: 'UI/UX Design Masterclass',
+      instructor: 'Emily Rodriguez',
+      image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop',
+      students: 6700,
+      rating: 4.7,
+      reviews: 1200,
+      price: 39.99,
+      category: 'Design',
+      level: 'Intermediate',
+      duration: '30 hours'
+    },
+    {
+      id: 4,
+      title: 'Digital Marketing Strategy',
+      instructor: 'James Wilson',
+      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+      students: 5400,
+      rating: 4.6,
+      reviews: 980,
+      price: 44.99,
+      category: 'Marketing',
+      level: 'Beginner',
+      duration: '25 hours'
+    },
+    {
+      id: 5,
+      title: 'Python for Data Science',
+      instructor: 'Lisa Anderson',
+      image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=600&fit=crop',
+      students: 9200,
+      rating: 4.8,
+      reviews: 2100,
+      price: 54.99,
+      category: 'Data Science',
+      level: 'Intermediate',
+      duration: '45 hours'
+    },
+    {
+      id: 6,
+      title: 'Photography Fundamentals',
+      instructor: 'David Martinez',
+      image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&h=600&fit=crop',
+      students: 4100,
+      rating: 4.9,
+      reviews: 890,
+      price: 34.99,
+      category: 'Photography',
+      level: 'Beginner',
+      duration: '20 hours'
+    },
+  ];
+
+  // Filter courses based on search and category
+  const filteredCourses = allCourses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         course.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Sort courses
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    switch (sortBy) {
+      case 'popular':
+        return b.students - a.students;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      default:
+        return 0;
     }
-  }, [location]);
+  });
 
-  useEffect(() => {
-    fetchCategories();
-    fetchCourses();
-  }, []);
-
-  // Debounced search - search as user types
-  useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchCourses(searchQuery);
-      } else {
-        fetchCourses();
-      }
-    }, 500);
-
-    return () => clearTimeout(delaySearch);
-  }, [searchQuery]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get('/categories/');
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-    }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const response = await api.get('/courses/');
-      setCourses(response.data);
-      setLoading(false);
-      setSearching(false);
-    } catch (err) {
-      setError('Failed to load courses');
-      setLoading(false);
-      setSearching(false);
-    }
-  };
-
-  const searchCourses = async (query) => {
-    setSearching(true);
-    try {
-      const response = await api.get(`/courses/?search=${encodeURIComponent(query)}`);
-      setCourses(response.data);
-      setSearching(false);
-    } catch (err) {
-      setError('Search failed');
-      setSearching(false);
-    }
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setSelectedCategory('all');
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
-    fetchCourses();
+    navigate('/courses');
   };
 
-  const filteredCourses = selectedCategory === 'all'
-    ? courses
-    : courses.filter(course => course.category?.slug === selectedCategory);
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">A</span>
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Academe
+              </span>
+            </Link>
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-xl text-gray-600 font-medium">Loading courses...</div>
+            <div className="hidden md:flex items-center space-x-8">
+              <Link to="/courses" className="text-indigo-600 font-medium">
+                Courses
+              </Link>
+              {user ? (
+                <>
+                  {isStudent && (
+                    <Link to="/my-courses" className="text-gray-700 hover:text-indigo-600 font-medium transition">
+                      My Courses
+                    </Link>
+                  )}
+                  {isInstructor && (
+                    <Link to="/instructor/dashboard" className="text-gray-700 hover:text-indigo-600 font-medium transition">
+                      Dashboard
+                    </Link>
+                  )}
+                  <Link to="/profile" className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition">
+                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {user.first_name?.[0] || 'U'}
+                      </span>
+                    </div>
+                  </Link>
+                  <button onClick={logout} className="text-gray-600 hover:text-gray-900 font-medium">
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="text-gray-700 hover:text-indigo-600 font-medium">
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition font-medium"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Page Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-bold mb-4">Explore Courses</h1>
+          <p className="text-indigo-100 text-lg mb-6">
+            Discover thousands of courses taught by expert instructors
+          </p>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="max-w-2xl">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search for courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-6 py-4 rounded-lg text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30 pr-24"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-32 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition"
+              >
+                Search
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
-                SimpleLMS
-              </Link>
-              <nav className="hidden md:flex items-center gap-6">
-                <Link to="/courses" className="text-blue-600 font-semibold border-b-2 border-blue-600 pb-1">
-                  Courses
-                </Link>
-                {user && user.role === 'student' && (
-                  <Link to="/my-courses" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-                    My Courses
-                  </Link>
-                )}
-                {user && user.role === 'instructor' && (
-                  <Link to="/instructor/dashboard" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
-                    Dashboard
-                  </Link>
-                )}
-              </nav>
-            </div>
-            
-            {user ? (
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                    {(user.first_name || user.email).charAt(0).toUpperCase()}
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {user.first_name || user.email}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-red-500/50 transition-all duration-300 hover:scale-105"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105"
-              >
-                Login
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            {searchQuery ? 'Search Results' : 'Browse Courses'}
-          </h1>
-          <p className="text-lg text-gray-600">
-            {searchQuery 
-              ? `Found ${filteredCourses.length} result${filteredCourses.length !== 1 ? 's' : ''} for "${searchQuery}"` 
-              : `Explore our collection of ${courses.length} expert-led courses`
-            }
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Filters */}
+          <aside className="lg:w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+              <h3 className="font-bold text-gray-900 mb-4">Filters</h3>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-lg mb-8 flex items-center gap-3">
-            <span className="text-2xl">⚠️</span>
-            <span className="font-medium">{error}</span>
-          </div>
-        )}
-
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-3xl">
-            <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl pointer-events-none">
-              🔍
-            </div>
-            
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search courses by title, description, or instructor..."
-              className="w-full px-5 py-4 pl-14 pr-14 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-gray-900 placeholder-gray-400 shadow-sm hover:shadow-md"
-            />
-            
-            {searchQuery && (
-              <>
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xl"
-                >
-                  ✕
-                </button>
-                {searching && (
-                  <div className="absolute right-14 top-1/2 transform -translate-y-1/2 text-blue-600">
-                    <div className="animate-spin text-xl">⟳</div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          
-          {searchQuery && (
-            <div className="mt-3 text-sm text-gray-600 flex items-center gap-2">
-              <span className="text-lg">💡</span>
-              <span>Tip: Search by course title, description, or instructor name</span>
-            </div>
-          )}
-        </div>
-
-        {/* Category Filter - Only show if not searching */}
-        {!searchQuery && (
-          <div className="mb-10">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Filter by Category</h3>
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all duration-300 ${
-                  selectedCategory === 'all'
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/50 scale-105'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                All Courses ({courses.length})
-              </button>
-
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.slug)}
-                  className={`px-6 py-3 rounded-xl font-medium whitespace-nowrap transition-all duration-300 flex items-center gap-2 ${
-                    selectedCategory === category.slug
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/50 scale-105'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-blue-300'
-                  }`}
-                >
-                  <span className="text-lg">{category.icon}</span>
-                  <span>{category.name} ({category.course_count})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Results Count */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="text-sm text-gray-600 font-medium">
-            {searching ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin">⟳</span>
-                Searching...
-              </span>
-            ) : (
-              <span>
-                {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''} 
-                {searchQuery && ` matching "${searchQuery}"`}
-                {selectedCategory !== 'all' && !searchQuery && ` in ${categories.find(c => c.slug === selectedCategory)?.name}`}
-              </span>
-            )}
-          </div>
-
-          {(searchQuery || selectedCategory !== 'all') && (
-            <button
-              onClick={() => {
-                clearSearch();
-                setSelectedCategory('all');
-              }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium underline"
-            >
-              Clear all filters
-            </button>
-          )}
-        </div>
-
-        {/* Courses Grid */}
-        {filteredCourses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-xl p-16 text-center">
-            <div className="text-7xl mb-6">🔍</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              {searchQuery 
-                ? `No courses found matching "${searchQuery}"`
-                : selectedCategory === 'all' 
-                  ? 'No courses available yet'
-                  : `No courses in this category yet`
-              }
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {searchQuery 
-                ? 'Try adjusting your search terms or browse all courses'
-                : 'Check back soon for new courses!'
-              }
-            </p>
-            {(searchQuery || selectedCategory !== 'all') && (
-              <button
-                onClick={() => {
-                  clearSearch();
-                  setSelectedCategory('all');
-                }}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105"
-              >
-                View All Courses
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCourses.map((course) => (
-              <Link
-                key={course.id}
-                to={`/courses/${course.id}`}
-                className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden hover:-translate-y-2 border border-gray-100"
-              >
-                {course.thumbnail_url ? (
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={course.thumbnail_url}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                ) : (
-                  <div className={`h-48 flex items-center justify-center relative overflow-hidden ${
-                    course.category?.slug === 'programming' ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
-                    course.category?.slug === 'design' ? 'bg-gradient-to-br from-pink-500 to-purple-600' :
-                    course.category?.slug === 'business' ? 'bg-gradient-to-br from-green-500 to-teal-600' :
-                    course.category?.slug === 'data-science' ? 'bg-gradient-to-br from-orange-500 to-red-600' :
-                    course.category?.slug === 'personal-development' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' :
-                    'bg-gradient-to-br from-blue-500 to-purple-600'
-                  }`}>
-                    <span className="text-white text-5xl font-bold group-hover:scale-125 transition-transform duration-300">
-                      {course.title.charAt(0)}
-                    </span>
-                  </div>
-                )}
-
-                <div className="p-6">
-                  {course.category && (
-                    <div className="mb-3">
-                      <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium">
-                        <span>{course.category.icon}</span>
-                        <span>{course.category.name}</span>
-                      </span>
-                    </div>
-                  )}
-
-                  {course.average_rating > 0 && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex text-yellow-400 text-sm">
-                        {'★'.repeat(Math.round(course.average_rating))}
-                        {'☆'.repeat(5 - Math.round(course.average_rating))}
-                      </div>
-                      <span className="text-sm text-gray-600 font-medium">
-                        {course.average_rating.toFixed(1)} ({course.review_count})
-                      </span>
-                    </div>
-                  )}
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {course.title}
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">
-                    {course.description}
-                  </p>
-
-                  <div className="flex items-center justify-between mb-4 text-sm">
-                    <span className="text-gray-700 font-medium">
-                      By {course.instructor.first_name || course.instructor.email}
-                    </span>
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                      {course.difficulty}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
-                    <span className="flex items-center gap-1">
-                      📚 {course.total_lessons} lessons
-                    </span>
-                    <span className="flex items-center gap-1">
-                      👥 {course.total_students} students
-                    </span>
-                  </div>
+              {/* Category Filter */}
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-700 mb-3">Category</h4>
+                <div className="space-y-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category === 'All' ? 'all' : category)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition ${
+                        (selectedCategory === 'all' && category === 'All') ||
+                        selectedCategory === category
+                          ? 'bg-indigo-50 text-indigo-600 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </main>
+              </div>
 
-      {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm">
-          <p>© 2024 SimpleLMS. Empowering learners worldwide 🌍</p>
+              {/* Sort By */}
+              <div>
+                <h4 className="font-medium text-gray-700 mb-3">Sort By</h4>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="popular">Most Popular</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+          </aside>
+
+          {/* Courses Grid */}
+          <main className="flex-1">
+            <div className="mb-6 flex justify-between items-center">
+              <p className="text-gray-600">
+                {sortedCourses.length} {sortedCourses.length === 1 ? 'course' : 'courses'} found
+              </p>
+            </div>
+
+            {sortedCourses.length > 0 ? (
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {sortedCourses.map((course) => (
+                  <Link
+                    key={course.id}
+                    to={`/courses/${course.id}`}
+                    className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600">
+                        {course.category}
+                      </div>
+                      <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-medium">
+                        {course.level}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition line-clamp-2">
+                        {course.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-3">By {course.instructor}</p>
+
+                      <div className="flex items-center space-x-3 text-sm text-gray-500 mb-3">
+                        <span className="flex items-center">
+                          <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          {course.rating}
+                        </span>
+                        <span>({course.reviews.toLocaleString()})</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          {course.students.toLocaleString()}
+                        </div>
+                        <span className="text-2xl font-bold text-indigo-600">${course.price}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses found</h3>
+                <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                  }}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            )}
+          </main>
         </div>
-      </footer>
+      </div>
     </div>
   );
-}
+};
 
 export default Courses;

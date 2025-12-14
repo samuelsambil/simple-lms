@@ -1,240 +1,325 @@
-import { useState, useEffect, useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function QuizResults() {
+const QuizResults = () => {
   const { quizId, attemptId } = useParams();
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const location = useLocation();
 
-  const [attempt, setAttempt] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Get data from navigation state (passed from TakeQuiz)
+  const {
+    score = 0,
+    totalQuestions = 0,
+    selectedAnswers = {},
+    questions = [],
+    passingScore = 70,
+    timeExpired = false
+  } = location.state || {};
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+  const passed = score >= passingScore;
+  const correctCount = Math.round((score / 100) * totalQuestions);
 
-    fetchResults();
-  }, [attemptId, user, navigate]);
-
-  const fetchResults = async () => {
-    try {
-      const response = await api.get(`/quiz-attempts/${attemptId}/`);
-      setAttempt(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load results');
-      setLoading(false);
-    }
+  // Get letter grade
+  const getLetterGrade = (score) => {
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 70) return 'C';
+    if (score >= 60) return 'D';
+    return 'F';
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading results...</div>
-      </div>
-    );
-  }
-
-  if (error || !attempt) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl text-red-600 mb-4">{error || 'Results not found'}</div>
-          <Link to="/courses" className="text-blue-600 hover:underline">
-            Back to Courses
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const correctCount = attempt.student_answers.filter((a) => a.is_correct).length;
-  const totalQuestions = attempt.student_answers.length;
+  const letterGrade = getLetterGrade(score);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="text-2xl font-bold text-gray-900">
-                Simple LMS
-              </Link>
-              <Link to="/my-courses" className="text-gray-600 hover:text-gray-900">
-                ← My Courses
-              </Link>
-            </div>
-            
-            {user && (
-              <div className="flex items-center gap-4">
-                <Link to="/profile" className="text-gray-700 hover:text-gray-900">
-                  {user.first_name || user.email}
-                </Link>
-                <button
-                  onClick={logout}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                >
-                  Logout
-                </button>
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">A</span>
               </div>
-            )}
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Academe
+              </span>
+            </Link>
+
+            <Link
+              to="/my-courses"
+              className="text-gray-700 hover:text-indigo-600 font-medium transition"
+            >
+              ← My Courses
+            </Link>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* Results Card */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-          {/* Pass/Fail Banner */}
-          <div className={`p-8 text-center ${
-            attempt.passed ? 'bg-green-600' : 'bg-red-600'
-          } text-white`}>
-            <div className="text-6xl mb-4">
-              {attempt.passed ? '🎉' : '😞'}
+      {/* Results Banner */}
+      <div className={`${passed ? 'bg-gradient-to-r from-green-600 to-emerald-600' : 'bg-gradient-to-r from-red-600 to-orange-600'} text-white py-12`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {timeExpired && (
+            <div className="mb-4 inline-flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Time Expired - Quiz Auto-Submitted
             </div>
-            <h1 className="text-3xl font-bold mb-2">
-              {attempt.passed ? 'Congratulations!' : 'Not Quite There'}
-            </h1>
-            <p className="text-xl">
-              {attempt.passed 
-                ? 'You passed the quiz!' 
-                : 'Keep trying, you can do it!'}
-            </p>
+          )}
+          
+          <div className="mb-6">
+            {passed ? (
+              <svg className="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg className="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
           </div>
 
-          {/* Score Details */}
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {Math.round(attempt.score)}%
-                </div>
-                <div className="text-sm text-gray-600">Your Score</div>
-              </div>
+          <h1 className="text-4xl font-bold mb-2">
+            {passed ? 'Congratulations! You Passed!' : 'Quiz Completed'}
+          </h1>
+          <p className="text-xl opacity-90">
+            {passed 
+              ? 'Great job! You\'ve successfully completed this quiz.'
+              : `You need ${passingScore}% to pass. Keep practicing and try again!`
+            }
+          </p>
+        </div>
+      </div>
 
-              <div className="text-center">
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                  {correctCount}/{totalQuestions}
-                </div>
-                <div className="text-sm text-gray-600">Correct Answers</div>
-              </div>
+      {/* Score Cards */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-8">
+        <div className="grid md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 text-sm font-medium mb-2">Your Score</p>
+            <p className="text-4xl font-bold text-gray-900">{Math.round(score)}%</p>
+          </div>
 
-              <div className="text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-2">
-                  {attempt.earned_points}/{attempt.total_points}
-                </div>
-                <div className="text-sm text-gray-600">Points Earned</div>
-              </div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 text-sm font-medium mb-2">Grade</p>
+            <p className={`text-4xl font-bold ${
+              letterGrade === 'A' ? 'text-green-600' :
+              letterGrade === 'B' ? 'text-blue-600' :
+              letterGrade === 'C' ? 'text-yellow-600' :
+              'text-red-600'
+            }`}>{letterGrade}</p>
+          </div>
 
-              <div className="text-center">
-                <div className="text-4xl font-bold text-orange-600 mb-2">
-                  {attempt.attempt_number}
-                </div>
-                <div className="text-sm text-gray-600">Attempt Number</div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 text-sm font-medium mb-2">Correct</p>
+            <p className="text-4xl font-bold text-green-600">{correctCount}</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 text-sm font-medium mb-2">Total</p>
+            <p className="text-4xl font-bold text-gray-900">{totalQuestions}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Analysis */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="bg-white rounded-xl shadow-md p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Performance Analysis</h2>
+          
+          <div className="space-y-6">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-700 font-medium">Accuracy</span>
+                <span className="text-gray-900 font-semibold">{Math.round(score)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-4">
+                <div
+                  className={`h-4 rounded-full transition-all ${
+                    passed
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                      : 'bg-gradient-to-r from-red-600 to-orange-600'
+                  }`}
+                  style={{ width: `${score}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span className="font-medium">Passing: {passingScore}%</span>
+                <span>100%</span>
               </div>
             </div>
 
-            {attempt.time_taken_seconds && (
-              <div className="text-center text-gray-600 mb-6">
-                Time taken: {Math.floor(attempt.time_taken_seconds / 60)}m {attempt.time_taken_seconds % 60}s
+            <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
+              <div>
+                <div className="flex items-center mb-2">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{correctCount}</p>
+                    <p className="text-sm text-gray-600">Correct Answers</p>
+                  </div>
+                </div>
               </div>
-            )}
 
-            {/* Detailed Answers */}
-            <div className="border-t pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Question Review
-              </h2>
+              <div>
+                <div className="flex items-center mb-2">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{totalQuestions - correctCount}</p>
+                    <p className="text-sm text-gray-600">Incorrect Answers</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div className="space-y-6">
-                {attempt.student_answers.map((answer, index) => (
-                  <div
-                    key={answer.id}
-                    className={`border-2 rounded-lg p-6 ${
-                      answer.is_correct
-                        ? 'border-green-200 bg-green-50'
-                        : 'border-red-200 bg-red-50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                        answer.is_correct
-                          ? 'bg-green-600 text-white'
-                          : 'bg-red-600 text-white'
-                      }`}>
-                        {answer.is_correct ? '✓' : '✗'}
-                      </div>
+      {/* Question Review */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white rounded-xl shadow-md p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Your Answers</h2>
+          
+          <div className="space-y-8">
+            {questions.map((question, index) => {
+              const userAnswer = selectedAnswers[question.id];
+              const isCorrect = userAnswer === question.correctAnswer;
+              const wasAnswered = userAnswer !== undefined;
 
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-900 mb-3">
-                          Question {index + 1}: {answer.question_text}
+              return (
+                <div key={question.id} className="pb-8 border-b border-gray-200 last:border-0">
+                  <div className="flex items-start mb-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
+                      isCorrect ? 'bg-green-100' : wasAnswered ? 'bg-red-100' : 'bg-gray-100'
+                    }`}>
+                      {isCorrect ? (
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : wasAnswered ? (
+                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      ) : (
+                        <span className="text-gray-400 text-sm font-medium">{index + 1}</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Question {index + 1}
                         </h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          isCorrect 
+                            ? 'bg-green-100 text-green-700' 
+                            : wasAnswered 
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {isCorrect ? 'Correct' : wasAnswered ? 'Incorrect' : 'Not Answered'}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-4">{question.question}</p>
 
-                        <div className="space-y-2">
-                          <div>
-                            <span className="font-medium text-gray-700">Your answer: </span>
-                            <span className={answer.is_correct ? 'text-green-700' : 'text-red-700'}>
-                              {answer.selected_answer_text}
-                            </span>
-                          </div>
+                      <div className="space-y-2">
+                        {question.options.map((option, optionIndex) => {
+                          const isUserAnswer = userAnswer === optionIndex;
+                          const isCorrectAnswer = question.correctAnswer === optionIndex;
 
-                          {!answer.is_correct && (
-                            <div>
-                              <span className="font-medium text-gray-700">Correct answer: </span>
-                              <span className="text-green-700">
-                                {answer.correct_answer_text}
-                              </span>
+                          return (
+                            <div
+                              key={optionIndex}
+                              className={`p-4 rounded-lg border-2 ${
+                                isCorrectAnswer
+                                  ? 'border-green-500 bg-green-50'
+                                  : isUserAnswer && !isCorrect
+                                  ? 'border-red-500 bg-red-50'
+                                  : 'border-gray-200 bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 mr-3">
+                                  {isCorrectAnswer && (
+                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                  {isUserAnswer && !isCorrect && (
+                                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                  {!isCorrectAnswer && !isUserAnswer && (
+                                    <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                                  )}
+                                </div>
+                                <span className={`flex-1 ${
+                                  isCorrectAnswer ? 'text-green-900 font-medium' : 
+                                  isUserAnswer ? 'text-red-900 font-medium' : 
+                                  'text-gray-700'
+                                }`}>
+                                  {option}
+                                </span>
+                                {isCorrectAnswer && (
+                                  <span className="text-xs font-medium text-green-700 ml-2">Correct Answer</span>
+                                )}
+                                {isUserAnswer && !isCorrect && (
+                                  <span className="text-xs font-medium text-red-700 ml-2">Your Answer</span>
+                                )}
+                              </div>
                             </div>
-                          )}
-
-                          {answer.explanation && (
-                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                              <span className="font-medium text-blue-900">💡 Explanation: </span>
-                              <span className="text-blue-800">{answer.explanation}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3 text-sm text-gray-600">
-                          Points: {answer.points_earned} / {answer.is_correct ? answer.points_earned : answer.points_earned + 1}
-                        </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center">
+      {/* Action Buttons */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Link
             to="/my-courses"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-medium"
+            className="flex-1 bg-gray-100 text-gray-700 text-center py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
           >
             Back to My Courses
           </Link>
-          
-          {!attempt.passed && (
+          {!passed && (
             <Link
               to={`/quiz/${quizId}/take`}
-              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-medium"
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-center py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition"
             >
               Try Again
             </Link>
           )}
+          {passed && (
+            <Link
+              to="/my-courses"
+              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-center py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition"
+            >
+              Continue Learning
+            </Link>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
-}
+};
 
 export default QuizResults;

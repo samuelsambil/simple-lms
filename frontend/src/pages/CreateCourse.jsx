@@ -1,341 +1,477 @@
-import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api/axios';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function CreateCourse() {
-  const { user, logout } = useContext(AuthContext);
+const CreateCourse = () => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
+    subtitle: '',
     description: '',
-    difficulty: 'beginner',
-    status: 'draft',
+    category: '',
+    level: 'beginner',
+    language: 'English',
+    price: '',
+    image: null,
   });
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
-  if (!user || user.role !== 'instructor') {
-    navigate('/');
-    return null;
-  }
+  const [errors, setErrors] = useState({});
+
+  const categories = [
+    'Web Development',
+    'Mobile Development',
+    'Data Science',
+    'Machine Learning',
+    'Design',
+    'Business',
+    'Marketing',
+    'Photography',
+    'Music',
+    'Health & Fitness',
+    'Language Learning',
+    'Test Preparation'
+  ];
+
+  const levels = [
+    { value: 'beginner', label: 'Beginner' },
+    { value: 'intermediate', label: 'Intermediate' },
+    { value: 'advanced', label: 'Advanced' },
+    { value: 'all', label: 'All Levels' }
+  ];
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleThumbnailChange = (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size must be less than 5MB');
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
         return;
       }
-      setThumbnailFile(file);
-      setThumbnailPreview(URL.createObjectURL(file));
-      setError('');
+
+      setFormData(prev => ({ ...prev, image: file }));
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      if (errors.image) {
+        setErrors(prev => ({ ...prev, image: '' }));
+      }
     }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Course title is required';
+    } else if (formData.title.length < 10) {
+      newErrors.title = 'Title must be at least 10 characters';
+    }
+
+    if (!formData.subtitle.trim()) {
+      newErrors.subtitle = 'Subtitle is required';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length < 50) {
+      newErrors.description = 'Description must be at least 50 characters';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
+    }
+
+    if (!formData.price) {
+      newErrors.price = 'Price is required';
+    } else if (parseFloat(formData.price) < 0) {
+      newErrors.price = 'Price must be positive';
+    }
+
+    if (!formData.image) {
+      newErrors.image = 'Course image is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('description', formData.description);
-      data.append('difficulty', formData.difficulty);
-      data.append('status', formData.status);
+      // Mock API call - Replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (thumbnailFile) {
-        data.append('thumbnail', thumbnailFile);
-      }
-
-      const response = await api.post('/courses/', data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      console.log('Creating course:', formData);
       
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/instructor/dashboard');
-      }, 2000);
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create course');
+      // Redirect to dashboard on success
+      navigate('/instructor/dashboard');
+    } catch (error) {
+      console.error('Error creating course:', error);
+      setErrors({ submit: 'Failed to create course. Please try again.' });
+    } finally {
       setLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    if (window.confirm('Are you sure you want to cancel? All changes will be lost.')) {
+      navigate('/instructor/dashboard');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
-                SimpleLMS
-              </Link>
-              <Link 
-                to="/instructor/dashboard" 
-                className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition-colors font-medium"
-              >
-                <span>←</span>
-                <span>Back to Dashboard</span>
-              </Link>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                  {(user.first_name || user.email).charAt(0).toUpperCase()}
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {user.first_name || user.email}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">A</span>
               </div>
-              <button
-                onClick={logout}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-red-500/50 transition-all duration-300 hover:scale-105"
-              >
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Academe
+              </span>
+            </Link>
+
+            <div className="hidden md:flex items-center space-x-8">
+              <Link to="/instructor/dashboard" className="text-gray-700 hover:text-indigo-600 font-medium transition">
+                Dashboard
+              </Link>
+              <Link to="/profile" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.first_name?.[0] || 'U'}
+                  </span>
+                </div>
+              </Link>
+              <button onClick={logout} className="text-gray-600 hover:text-gray-900 font-medium">
                 Logout
               </button>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-10 border border-indigo-100">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">✨</div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
-              Create New Course
-            </h1>
-            <p className="text-lg text-gray-600">
-              Start building your course. Add lessons and content after creation.
-            </p>
-          </div>
+      {/* Page Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link
+            to="/instructor/dashboard"
+            className="inline-flex items-center text-indigo-100 hover:text-white mb-4 transition"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </Link>
+          <h1 className="text-4xl font-bold">Create New Course</h1>
+          <p className="text-indigo-100 mt-2">Share your knowledge with students worldwide</p>
+        </div>
+      </div>
 
-          {/* Success Message */}
-          {success && (
-            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 px-6 py-4 rounded-lg mb-8 flex items-center gap-3 animate-pulse">
-              <span className="text-3xl">🎉</span>
+      {/* Form */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* General Error */}
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {errors.submit}
+            </div>
+          )}
+
+          {/* Basic Information */}
+          <div className="bg-white rounded-xl shadow-md p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Basic Information</h2>
+
+            <div className="space-y-6">
+              {/* Title */}
               <div>
-                <p className="font-bold">Course created successfully!</p>
-                <p className="text-sm">Redirecting to your dashboard...</p>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Title *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g., Complete Web Development Bootcamp"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.title ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                )}
+                <p className="mt-1 text-sm text-gray-500">
+                  {formData.title.length}/100 characters
+                </p>
+              </div>
+
+              {/* Subtitle */}
+              <div>
+                <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Subtitle *
+                </label>
+                <input
+                  type="text"
+                  id="subtitle"
+                  name="subtitle"
+                  value={formData.subtitle}
+                  onChange={handleChange}
+                  placeholder="e.g., Learn HTML, CSS, JavaScript, React and more"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.subtitle ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {errors.subtitle && (
+                  <p className="mt-1 text-sm text-red-600">{errors.subtitle}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Description *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={6}
+                  placeholder="Describe what students will learn in this course..."
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.description ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                )}
+                <p className="mt-1 text-sm text-gray-500">
+                  {formData.description.length} characters (minimum 50)
+                </p>
+              </div>
+
+              {/* Category and Level */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      errors.category ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {errors.category && (
+                    <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-2">
+                    Level *
+                  </label>
+                  <select
+                    id="level"
+                    name="level"
+                    value={formData.level}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {levels.map(level => (
+                      <option key={level.value} value={level.value}>{level.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Language and Price */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                    Language *
+                  </label>
+                  <input
+                    type="text"
+                    id="language"
+                    name="language"
+                    value={formData.language}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (USD) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="49.99"
+                      className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        errors.price ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                  </div>
+                  {errors.price && (
+                    <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                  )}
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 rounded-lg mb-8 flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <span className="font-medium">{error}</span>
-            </div>
-          )}
+          {/* Course Image */}
+          <div className="bg-white rounded-xl shadow-md p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Image</h2>
 
-          <div className="space-y-8">
-            {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-lg font-bold text-gray-900 mb-3">
-                Course Title *
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Course Thumbnail *
               </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                required
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g., Introduction to Python Programming"
-                className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 text-lg"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-lg font-bold text-gray-900 mb-3">
-                Course Description *
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                required
-                value={formData.description}
-                onChange={handleChange}
-                rows="6"
-                placeholder="Describe what students will learn in this course..."
-                className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 resize-none"
-              ></textarea>
-              <p className="text-sm text-gray-500 mt-2 flex items-start gap-2">
-                <span>💡</span>
-                <span>Be clear and specific about learning outcomes</span>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload a high-quality image (16:9 ratio recommended, max 5MB)
               </p>
-            </div>
 
-            {/* Thumbnail Upload */}
-            <div>
-              <label className="block text-lg font-bold text-gray-900 mb-3">
-                Course Thumbnail (Optional)
-              </label>
-              
-              {thumbnailPreview ? (
-                <div className="mb-4 relative group">
-                  <img
-                    src={thumbnailPreview}
-                    alt="Thumbnail preview"
-                    className="w-full h-64 object-cover rounded-2xl shadow-lg"
-                  />
-                  <button
-                    onClick={() => {
-                      setThumbnailFile(null);
-                      setThumbnailPreview(null);
-                    }}
-                    className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
-                  >
-                    ✕ Remove
-                  </button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-indigo-400 transition-colors duration-300">
-                  <div className="text-6xl mb-4">🖼️</div>
-                  <p className="text-gray-600 mb-4">Upload a course thumbnail</p>
-                  <label className="cursor-pointer inline-block px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 hover:scale-105">
-                    <span>Choose Image</span>
+              <div className="space-y-4">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Course preview"
+                      className="w-full h-64 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData(prev => ({ ...prev, image: null }));
+                      }}
+                      className="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="mb-2 text-sm text-gray-600">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 5MB)</p>
+                    </div>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleThumbnailChange}
+                      onChange={handleImageChange}
                       className="hidden"
                     />
                   </label>
-                </div>
-              )}
-              <p className="text-sm text-gray-500 mt-2 flex items-start gap-2">
-                <span>📐</span>
-                <span>JPG, PNG, or GIF (recommended: 1200x600px, max 5MB)</span>
-              </p>
-            </div>
-
-            {/* Difficulty & Status Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Difficulty */}
-              <div>
-                <label htmlFor="difficulty" className="block text-lg font-bold text-gray-900 mb-3">
-                  Difficulty Level
-                </label>
-                <select
-                  id="difficulty"
-                  name="difficulty"
-                  value={formData.difficulty}
-                  onChange={handleChange}
-                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 text-lg bg-white"
-                >
-                  <option value="beginner">🟢 Beginner</option>
-                  <option value="intermediate">🟡 Intermediate</option>
-                  <option value="advanced">🔴 Advanced</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label htmlFor="status" className="block text-lg font-bold text-gray-900 mb-3">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 text-gray-900 text-lg bg-white"
-                >
-                  <option value="draft">📝 Draft (not visible)</option>
-                  <option value="published">✅ Published (visible)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Info Box */}
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6">
-              <h3 className="font-bold text-indigo-900 mb-3 text-lg flex items-center gap-2">
-                <span className="text-2xl">📝</span>
-                <span>Next Steps</span>
-              </h3>
-              <p className="text-indigo-800 leading-relaxed">
-                After creating this course, you'll be able to add lessons, quizzes, and assignments through the Django admin panel at{' '}
-                <a 
-                  href="http://127.0.0.1:8000/admin/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="underline font-semibold hover:text-indigo-600"
-                >
-                  http://127.0.0.1:8000/admin/
-                </a>
-              </p>
-            </div>
-
-            {/* Submit Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button
-                onClick={handleSubmit}
-                disabled={loading || success}
-                className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">⟳</span>
-                    Creating Course...
-                  </span>
-                ) : success ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span>✓</span>
-                    Course Created!
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <span>✨</span>
-                    <span>Create Course</span>
-                  </span>
                 )}
-              </button>
-              
-              <Link
-                to="/instructor/dashboard"
-                className="px-8 py-4 border-2 border-gray-300 rounded-xl hover:bg-gray-50 font-semibold text-center transition-all duration-300 hover:scale-105"
-              >
-                Cancel
-              </Link>
+              </div>
+
+              {errors.image && (
+                <p className="mt-2 text-sm text-red-600">{errors.image}</p>
+              )}
             </div>
           </div>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm">
-          <p>© 2024 SimpleLMS. Empowering educators worldwide 👨‍🏫</p>
-        </div>
-      </footer>
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="font-semibold text-blue-900 mb-1">What happens next?</h3>
+                <p className="text-sm text-blue-800">
+                  After creating your course, you'll be able to add lessons, quizzes, and resources in the course editor. Your course will be saved as a draft until you're ready to publish it.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={loading}
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Course...
+                </>
+              ) : (
+                'Create Course'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
-}
+};
 
 export default CreateCourse;

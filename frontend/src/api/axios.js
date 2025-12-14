@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://etornam-one.vercel.app/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -37,7 +37,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || 'https://etornam-one.vercel.app/api'}/auth/token/refresh/`,
+            `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/auth/token/refresh/`,
             { refresh: refreshToken }
           );
 
@@ -124,5 +124,3 @@ export const userAPI = {
 
 // Export default api instance for custom calls
 export default api;
-
-
